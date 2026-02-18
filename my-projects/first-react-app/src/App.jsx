@@ -14,7 +14,7 @@ function App() {
 
   return (
     <div className="App">
-      <h1>🚀 My Job Tracker</h1>
+      <h1>✅ Tsegaw's Job Tracker</h1>
       <div className="card">
         <input 
           value={input} 
