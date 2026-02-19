@@ -1,82 +1,29 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
+.App { max-width: 600px; margin: 0 auto; padding: 20px; font-family: 'Inter', sans-serif; }
+.stats-container { display: flex; gap: 15px; margin-bottom: 20px; }
+.stat-card { background: #f0f4f8; padding: 10px; border-radius: 8px; flex: 1; text-align: center; }
+.stat-card span { display: block; font-size: 12px; color: #666; }
+.add-job-box { display: flex; gap: 10px; margin-bottom: 30px; }
+.controls { display: flex; gap: 10px; margin-bottom: 20px; }
+.search-bar { flex: 2; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
-}
-
-.job-item {
-  display: flex;
+.job-item { 
+  background: white; 
+  border: 1px solid #eee; 
+  padding: 15px; 
+  margin-bottom: 10px; 
+  border-radius: 8px; 
+  display: flex; 
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
-  border-bottom: 1px solid #eee;
-  text-align: left;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
-.delete-btn { background-color: #ff4444; margin-left: 10px; }
-.badge { margin-left: 10px; font-size: 0.8rem; padding: 2px 8px; border-radius: 12px; background: #e0e0e0; }
+.job-info { display: flex; flex-direction: column; text-align: left; }
+.job-info small { font-size: 11px; color: #999; margin: 4px 0; }
 
+.badge { font-size: 10px; padding: 3px 8px; border-radius: 4px; width: fit-content; text-transform: uppercase; font-weight: bold; }
+.badge.applied { background: #e3f2fd; color: #1976d2; }
+.badge.interviewing { background: #fffde7; color: #fbc02d; }
+.badge.offered { background: #e8f5e9; color: #388e3c; }
+.badge.rejected { background: #ffebee; color: #d32f2f; }
 
-.stats-container {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-bottom: 30px;
-}
-
-.stat-card {
-  background: #f9f9f9;
-  padding: 15px 25px;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  display: flex;
-  flex-direction: column;
-  min-width: 80px;
-}
-
-.stat-card span {
-  font-size: 0.8rem;
-  color: #666;
-  text-transform: uppercase;
-}
-
-.stat-card strong {
-  font-size: 1.5rem;
-  color: #2196f3;
-}
+.delete-btn { background: #ff5252; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
