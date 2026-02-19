@@ -7,7 +7,19 @@ function App() {
     const savedJobs = localStorage.getItem("tsegaw-jobs");
     return savedJobs ? JSON.parse(savedJobs) : [];
   });
+  const exportToCSV = () => {
+  const headers = ["Title,Status,Date,Notes\n"];
+  const rows = jobs.map(j => 
+    `"${j.title}","${j.status}","${j.date}","${j.notes.replace(/\n/g, " ")}"`
+  ).join("\n");
   
+  const blob = new Blob([headers + rows], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'my-job-applications.csv';
+  a.click();
+};
   const [input, setInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -158,5 +170,8 @@ function App() {
     </div>
   )
 }
+<button onClick={exportToCSV} className="export-btn">
+  📥 Download List (.csv)
+</button>
 
 export default App
