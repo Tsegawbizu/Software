@@ -1,23 +1,31 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 
 function App() {
-  const [jobs, setJobs] = useState([]);
+  // 1. Load initial data from localStorage (or empty array if none exists)
+  const [jobs, setJobs] = useState(() => {
+    const savedJobs = localStorage.getItem("tsegaw-jobs");
+    return savedJobs ? JSON.parse(savedJobs) : [];
+  });
+  
   const [input, setInput] = useState("");
 
+  // 2. useEffect: Runs every time 'jobs' changes to save it
+  useEffect(() => {
+    localStorage.setItem("tsegaw-jobs", JSON.stringify(jobs));
+  }, [jobs]);
+
   const addJob = () => {
-    if (input) {
+    if (input.trim()) {
       setJobs([...jobs, { id: Date.now(), title: input, status: "Applied" }]);
       setInput("");
     }
   };
 
-  // 1. Delete a job
   const deleteJob = (id) => {
     setJobs(jobs.filter(job => job.id !== id));
   };
 
-  // 2. Toggle status
   const toggleStatus = (id) => {
     const statuses = ["Applied", "Interviewing", "Offered", "Rejected"];
     setJobs(jobs.map(job => {
