@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import './App.css'
 
 function App() {
+  // --- 1. STATE & STORAGE ---
   const [jobs, setJobs] = useState(() => {
     const savedJobs = localStorage.getItem("tsegaw-jobs");
     return savedJobs ? JSON.parse(savedJobs) : [];
@@ -10,14 +11,18 @@ function App() {
   const [input, setInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
-  
-  // Day 4: State for the Modal
   const [editingJob, setEditingJob] = useState(null);
 
   useEffect(() => {
     localStorage.setItem("tsegaw-jobs", JSON.stringify(jobs));
   }, [jobs]);
 
+  // --- 2. CALCULATED STATS ---
+  const totalJobs = jobs.length;
+  const interviewingCount = jobs.filter(j => j.status === "Interviewing").length;
+  const offersCount = jobs.filter(j => j.status === "Offered").length;
+
+  // --- 3. ACTIONS ---
   const addJob = () => {
     if (input.trim()) {
       const newJob = { 
@@ -25,7 +30,7 @@ function App() {
         title: input, 
         status: "Applied",
         date: new Date().toLocaleDateString(),
-        notes: "" // Day 4: Initialize empty notes
+        notes: "" 
       };
       setJobs([...jobs, newJob]);
       setInput("");
@@ -34,6 +39,12 @@ function App() {
 
   const deleteJob = (id) => {
     setJobs(jobs.filter(job => job.id !== id));
+  };
+
+  const clearAllJobs = () => {
+    if (window.confirm("Are you sure you want to delete ALL jobs? This cannot be undone.")) {
+      setJobs([]);
+    }
   };
 
   const toggleStatus = (id) => {
@@ -48,6 +59,7 @@ function App() {
     }));
   };
 
+  // --- 4. FILTERING LOGIC ---
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === "All" || job.status === filterStatus;
@@ -58,25 +70,48 @@ function App() {
     <div className="App">
       <h1>💼 Tsegaw's Career Tracker</h1>
 
+      {/* DASHBOARD STATS */}
+      <div className="stats-container">
+        <div className="stat-card"><span>Total</span><strong>{totalJobs}</strong></div>
+        <div className="stat-card"><span>Interviews</span><strong>{interviewingCount}</strong></div>
+        <div className="stat-card"><span>Offers</span><strong style={{color: '#4caf50'}}>{offersCount}</strong></div>
+      </div>
+
+      {/* ADD JOB BOX */}
       <div className="card add-job-box">
-        <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Company or Role..." />
+        <input 
+          value={input} 
+          onChange={(e) => setInput(e.target.value)} 
+          placeholder="Enter Company or Role..." 
+        />
         <button onClick={addJob}>Add Job</button>
       </div>
 
+      <hr />
+
+      {/* SEARCH & FILTERS */}
       <div className="controls">
-        <input className="search-bar" placeholder="🔍 Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        <input 
+          className="search-bar" 
+          placeholder="🔍 Search applications..." 
+          value={searchTerm} 
+          onChange={(e) => setSearchTerm(e.target.value)} 
+        />
         <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
           <option value="All">All Status</option>
-          {["Applied", "Interviewing", "Offered", "Rejected"].map(s => <option key={s} value={s}>{s}</option>)}
+          {["Applied", "Interviewing", "Offered", "Rejected"].map(s => (
+            <option key={s} value={s}>{s}</option>
+          ))}
         </select>
       </div>
 
+      {/* JOB LIST */}
       <div className="job-list">
         {filteredJobs.map(job => (
           <div key={job.id} className="job-item">
             <div className="job-info">
               <strong>{job.title}</strong>
-              <small>{job.date}</small>
+              <small>Added: {job.date}</small>
               <span className={`badge ${job.status.toLowerCase()}`}>{job.status}</span>
             </div>
             <div className="actions">
@@ -88,22 +123,35 @@ function App() {
         ))}
       </div>
 
-      {/* --- DAY 4: THE MODAL --- */}
+      {/* EMPTY STATE & CLEAR ALL */}
+      {filteredJobs.length === 0 && <p className="empty-msg">No jobs found matching your criteria.</p>}
+      
+      {jobs.length > 0 && (
+        <button onClick={clearAllJobs} className="clear-btn">
+          ⚠️ Clear All Data
+        </button>
+      )}
+
+      {/* --- DAY 4: REFINED MODAL --- */}
       {editingJob && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>Notes for {editingJob.title}</h3>
+        <div className="modal-overlay" onClick={() => setEditingJob(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Notes for {editingJob.title}</h3>
+              <button className="close-x" onClick={() => setEditingJob(null)}>&times;</button>
+            </div>
+            
+            <label>Notes & Interview Reminders:</label>
             <textarea 
               value={editingJob.notes} 
               onChange={(e) => {
                 const updated = { ...editingJob, notes: e.target.value };
                 setEditingJob(updated);
-                // Update master list in real-time
                 setJobs(jobs.map(j => j.id === editingJob.id ? updated : j));
               }}
-              placeholder="Add interview links, salary info, or contact names..."
+              placeholder="Add links, salary info, or contact names here..."
             />
-            <button onClick={() => setEditingJob(null)}>Close & Save</button>
+            <button className="save-btn" onClick={() => setEditingJob(null)}>Save & Close</button>
           </div>
         </div>
       )}

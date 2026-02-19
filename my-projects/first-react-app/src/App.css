@@ -6,6 +6,7 @@
 .controls { display: flex; gap: 10px; margin-bottom: 20px; }
 .search-bar { flex: 2; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
 
+
 .job-item { 
   background: white; 
   border: 1px solid #eee; 
