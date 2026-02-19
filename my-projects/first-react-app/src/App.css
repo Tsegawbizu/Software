@@ -40,3 +40,14 @@
 .read-the-docs {
   color: #888;
 }
+
+.job-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+.delete-btn { background-color: #ff4444; margin-left: 10px; }
+.badge { margin-left: 10px; font-size: 0.8rem; padding: 2px 8px; border-radius: 12px; background: #e0e0e0; }
