@@ -7,19 +7,7 @@ function App() {
     const savedJobs = localStorage.getItem("tsegaw-jobs");
     return savedJobs ? JSON.parse(savedJobs) : [];
   });
-  const exportToCSV = () => {
-  const headers = ["Title,Status,Date,Notes\n"];
-  const rows = jobs.map(j => 
-    `"${j.title}","${j.status}","${j.date}","${j.notes.replace(/\n/g, " ")}"`
-  ).join("\n");
   
-  const blob = new Blob([headers + rows], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'my-job-applications.csv';
-  a.click();
-};
   const [input, setInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -29,12 +17,27 @@ function App() {
     localStorage.setItem("tsegaw-jobs", JSON.stringify(jobs));
   }, [jobs]);
 
-  // --- 2. CALCULATED STATS ---
+  // --- 2. EXPORT LOGIC ---
+  const exportToCSV = () => {
+    const headers = ["Title,Status,Date,Notes\n"];
+    const rows = jobs.map(j => 
+      `"${j.title}","${j.status}","${j.date}","${j.notes.replace(/\n/g, " ")}"`
+    ).join("\n");
+    
+    const blob = new Blob([headers + rows], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'my-job-applications.csv';
+    a.click();
+  };
+
+  // --- 3. CALCULATED STATS ---
   const totalJobs = jobs.length;
   const interviewingCount = jobs.filter(j => j.status === "Interviewing").length;
   const offersCount = jobs.filter(j => j.status === "Offered").length;
 
-  // --- 3. ACTIONS ---
+  // --- 4. ACTIONS ---
   const addJob = () => {
     if (input.trim()) {
       const newJob = { 
@@ -71,7 +74,7 @@ function App() {
     }));
   };
 
-  // --- 4. FILTERING LOGIC ---
+  // --- 5. FILTERING LOGIC ---
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === "All" || job.status === filterStatus;
@@ -82,14 +85,12 @@ function App() {
     <div className="App">
       <h1>💼 Tsegaw's Career Tracker</h1>
 
-      {/* DASHBOARD STATS */}
       <div className="stats-container">
         <div className="stat-card"><span>Total</span><strong>{totalJobs}</strong></div>
         <div className="stat-card"><span>Interviews</span><strong>{interviewingCount}</strong></div>
         <div className="stat-card"><span>Offers</span><strong style={{color: '#4caf50'}}>{offersCount}</strong></div>
       </div>
 
-      {/* ADD JOB BOX */}
       <div className="card add-job-box">
         <input 
           value={input} 
@@ -101,7 +102,6 @@ function App() {
 
       <hr />
 
-      {/* SEARCH & FILTERS */}
       <div className="controls">
         <input 
           className="search-bar" 
@@ -117,7 +117,6 @@ function App() {
         </select>
       </div>
 
-      {/* JOB LIST */}
       <div className="job-list">
         {filteredJobs.map(job => (
           <div key={job.id} className="job-item">
@@ -135,16 +134,23 @@ function App() {
         ))}
       </div>
 
-      {/* EMPTY STATE & CLEAR ALL */}
       {filteredJobs.length === 0 && <p className="empty-msg">No jobs found matching your criteria.</p>}
       
-      {jobs.length > 0 && (
-        <button onClick={clearAllJobs} className="clear-btn">
-          ⚠️ Clear All Data
-        </button>
-      )}
+      {/* ACTION BUTTONS GROUP */}
+      <div className="footer-actions">
+        {jobs.length > 0 && (
+          <>
+            <button onClick={exportToCSV} className="export-btn">
+              📥 Download List (.csv)
+            </button>
+            <button onClick={clearAllJobs} className="clear-btn">
+              ⚠️ Clear All Data
+            </button>
+          </>
+        )}
+      </div>
 
-      {/* --- DAY 4: REFINED MODAL --- */}
+      {/* --- MODAL --- */}
       {editingJob && (
         <div className="modal-overlay" onClick={() => setEditingJob(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -170,8 +176,5 @@ function App() {
     </div>
   )
 }
-<button onClick={exportToCSV} className="export-btn">
-  📥 Download List (.csv)
-</button>
 
 export default App
