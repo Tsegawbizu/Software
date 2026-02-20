@@ -1,6 +1,7 @@
+import Stats from './components/Stats';
 import { useState, useEffect } from 'react'
 import './App.css'
-import Stats from './components/Stats';
+
 
 
 
