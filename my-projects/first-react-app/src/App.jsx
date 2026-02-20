@@ -17,7 +17,14 @@ function App() {
     localStorage.setItem("tsegaw-jobs", JSON.stringify(jobs));
   }, [jobs]);
 
-  // --- 2. EXPORT LOGIC ---
+  // --- 2. HELPER FUNCTIONS ---
+  const getDaysSince = (dateString) => {
+    const jobDate = new Date(dateString);
+    const today = new Date();
+    const diffTime = Math.abs(today - jobDate);
+    return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  };
+
   const exportToCSV = () => {
     const headers = ["Title,Status,Date,Notes\n"];
     const rows = jobs.map(j => 
@@ -28,14 +35,15 @@ function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'my-job-applications.csv';
+    a.download = 'tsegaws-job-hunt.csv';
     a.click();
   };
 
-  // --- 3. CALCULATED STATS ---
+  // --- 3. CALCULATED DATA ---
   const totalJobs = jobs.length;
   const interviewingCount = jobs.filter(j => j.status === "Interviewing").length;
   const offersCount = jobs.filter(j => j.status === "Offered").length;
+  const successRate = totalJobs > 0 ? Math.round(((interviewingCount + offersCount) / totalJobs) * 100) : 0;
 
   // --- 4. ACTIONS ---
   const addJob = () => {
@@ -56,12 +64,6 @@ function App() {
     setJobs(jobs.filter(job => job.id !== id));
   };
 
-  const clearAllJobs = () => {
-    if (window.confirm("Are you sure you want to delete ALL jobs? This cannot be undone.")) {
-      setJobs([]);
-    }
-  };
-
   const toggleStatus = (id) => {
     const statuses = ["Applied", "Interviewing", "Offered", "Rejected"];
     setJobs(jobs.map(job => {
@@ -74,7 +76,13 @@ function App() {
     }));
   };
 
-  // --- 5. FILTERING LOGIC ---
+  const clearAllJobs = () => {
+    if (window.confirm("Are you sure? This will wipe your entire history!")) {
+      setJobs([]);
+    }
+  };
+
+  // --- 5. FILTERING ---
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === "All" || job.status === filterStatus;
@@ -85,81 +93,93 @@ function App() {
     <div className="App">
       <h1>💼 Tsegaw's Career Tracker</h1>
 
+      {/* DASHBOARD */}
       <div className="stats-container">
         <div className="stat-card"><span>Total</span><strong>{totalJobs}</strong></div>
         <div className="stat-card"><span>Interviews</span><strong>{interviewingCount}</strong></div>
         <div className="stat-card"><span>Offers</span><strong style={{color: '#4caf50'}}>{offersCount}</strong></div>
       </div>
 
+      <div className="progress-container">
+        <div className="progress-label">
+          <span>Hunt Progress</span>
+          <span>{successRate}% Success Rate</span>
+        </div>
+        <div className="progress-bar-bg">
+          <div className="progress-bar-fill" style={{ width: `${successRate}%` }}></div>
+        </div>
+      </div>
+
+      {/* INPUT SECTION */}
       <div className="card add-job-box">
         <input 
           value={input} 
           onChange={(e) => setInput(e.target.value)} 
-          placeholder="Enter Company or Role..." 
+          placeholder="Company or Role Name..." 
         />
         <button onClick={addJob}>Add Job</button>
       </div>
 
       <hr />
 
+      {/* SEARCH & FILTER */}
       <div className="controls">
         <input 
           className="search-bar" 
-          placeholder="🔍 Search applications..." 
+          placeholder="🔍 Search my applications..." 
           value={searchTerm} 
           onChange={(e) => setSearchTerm(e.target.value)} 
         />
         <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
           <option value="All">All Status</option>
-          {["Applied", "Interviewing", "Offered", "Rejected"].map(s => (
-            <option key={s} value={s}>{s}</option>
-          ))}
+          {["Applied", "Interviewing", "Offered", "Rejected"].map(s => <option key={s} value={s}>{s}</option>)}
         </select>
       </div>
 
+      {/* LIST SECTION */}
       <div className="job-list">
-        {filteredJobs.map(job => (
-          <div key={job.id} className="job-item">
-            <div className="job-info">
-              <strong>{job.title}</strong>
-              <small>Added: {job.date}</small>
-              <span className={`badge ${job.status.toLowerCase()}`}>{job.status}</span>
+        {filteredJobs.map(job => {
+          const daysSince = getDaysSince(job.date);
+          return (
+            <div key={job.id} className="job-item">
+              <div className="job-info">
+                <strong>{job.title}</strong>
+                <small>
+                  Added: {job.date} 
+                  {daysSince > 0 && <span className={daysSince > 7 && job.status === "Applied" ? "warning-text" : ""}> ({daysSince}d ago)</span>}
+                </small>
+                <span className={`badge ${job.status.toLowerCase()}`}>{job.status}</span>
+              </div>
+              <div className="actions">
+                <button onClick={() => setEditingJob(job)}>📝</button>
+                <button onClick={() => toggleStatus(job.id)}>↻</button>
+                <button onClick={() => deleteJob(job.id)} className="delete-btn">🗑️</button>
+              </div>
             </div>
-            <div className="actions">
-              <button onClick={() => setEditingJob(job)}>📝 Notes</button>
-              <button onClick={() => toggleStatus(job.id)}>↻</button>
-              <button onClick={() => deleteJob(job.id)} className="delete-btn">🗑️</button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {filteredJobs.length === 0 && <p className="empty-msg">No jobs found matching your criteria.</p>}
-      
-      {/* ACTION BUTTONS GROUP */}
+      {filteredJobs.length === 0 && <p className="empty-msg">No matches found.</p>}
+
+      {/* FOOTER ACTIONS */}
       <div className="footer-actions">
         {jobs.length > 0 && (
           <>
-            <button onClick={exportToCSV} className="export-btn">
-              📥 Download List (.csv)
-            </button>
-            <button onClick={clearAllJobs} className="clear-btn">
-              ⚠️ Clear All Data
-            </button>
+            <button onClick={exportToCSV} className="export-btn">📥 Export CSV</button>
+            <button onClick={clearAllJobs} className="clear-btn">⚠️ Clear All</button>
           </>
         )}
       </div>
 
-      {/* --- MODAL --- */}
+      {/* NOTES MODAL */}
       {editingJob && (
         <div className="modal-overlay" onClick={() => setEditingJob(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Notes for {editingJob.title}</h3>
+              <h3>{editingJob.title}</h3>
               <button className="close-x" onClick={() => setEditingJob(null)}>&times;</button>
             </div>
-            
-            <label>Notes & Interview Reminders:</label>
             <textarea 
               value={editingJob.notes} 
               onChange={(e) => {
@@ -167,7 +187,7 @@ function App() {
                 setEditingJob(updated);
                 setJobs(jobs.map(j => j.id === editingJob.id ? updated : j));
               }}
-              placeholder="Add links, salary info, or contact names here..."
+              placeholder="Paste job link, contact names, or interview notes here..."
             />
             <button className="save-btn" onClick={() => setEditingJob(null)}>Save & Close</button>
           </div>

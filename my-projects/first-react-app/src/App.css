@@ -96,3 +96,84 @@
   font-size: 12px;
   cursor: pointer;
 }
+
+/* Progress Bar */
+.progress-container {
+  margin: 10px 0 30px;
+  text-align: left;
+}
+.progress-container p { font-size: 12px; font-weight: bold; margin-bottom: 5px; }
+.progress-bar-bg {
+  background: #e0e0e0;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  background: linear-gradient(to right, #2196f3, #4caf50);
+  height: 100%;
+  transition: width 0.5s ease-in-out;
+}
+
+/* Warnings */
+.warning-text {
+  color: #ff9800;
+  font-weight: bold;
+  margin-left: 5px;
+}
+
+:root {
+  --primary: #2196f3;
+  --success: #4caf50;
+  --danger: #ff5252;
+  --warning: #ff9800;
+  --bg: #f5f7fa;
+}
+
+.App { max-width: 600px; margin: 0 auto; padding: 20px; font-family: 'Segoe UI', sans-serif; background: var(--bg); min-height: 100vh; }
+
+/* Stats & Progress */
+.stats-container { display: flex; gap: 10px; margin-bottom: 20px; }
+.stat-card { background: white; padding: 15px; border-radius: 12px; flex: 1; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.stat-card span { display: block; font-size: 11px; color: #777; text-transform: uppercase; }
+.stat-card strong { font-size: 1.4rem; color: var(--primary); }
+
+.progress-container { margin-bottom: 25px; }
+.progress-label { display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; margin-bottom: 6px; }
+.progress-bar-bg { background: #ddd; height: 8px; border-radius: 4px; overflow: hidden; }
+.progress-bar-fill { background: linear-gradient(to right, var(--primary), var(--success)); height: 100%; transition: width 0.4s ease; }
+
+/* Inputs & Controls */
+.add-job-box { display: flex; gap: 10px; margin-bottom: 20px; }
+.add-job-box input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ccc; }
+.controls { display: flex; gap: 10px; margin-bottom: 20px; }
+.search-bar { flex: 2; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
+
+/* List Items */
+.job-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.job-info { display: flex; flex-direction: column; text-align: left; }
+.job-info small { color: #888; font-size: 11px; margin: 4px 0; }
+.warning-text { color: var(--warning); }
+
+.badge { font-size: 9px; padding: 3px 8px; border-radius: 20px; font-weight: bold; text-transform: uppercase; width: fit-content; }
+.badge.applied { background: #e3f2fd; color: #1976d2; }
+.badge.interviewing { background: #fff8e1; color: #fbc02d; }
+.badge.offered { background: #e8f5e9; color: #2e7d32; }
+.badge.rejected { background: #ffebee; color: #c62828; }
+
+/* Modal */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 100; }
+.modal-content { background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 450px; display: flex; flex-direction: column; gap: 15px; }
+.modal-content textarea { height: 150px; padding: 12px; border-radius: 8px; border: 1px solid #ddd; resize: none; }
+.save-btn { background: var(--primary); color: white; padding: 12px; border-radius: 8px; font-weight: bold; }
+
+/* Footer */
+.footer-actions { display: flex; gap: 10px; justify-content: center; margin-top: 30px; }
+.export-btn { background: #eee; border: 1px solid #ccc; font-size: 12px; padding: 8px 12px; border-radius: 6px; }
+.clear-btn { background: none; border: 1px solid var(--danger); color: var(--danger); font-size: 12px; padding: 8px 12px; border-radius: 6px; }
+
+/* Mobile */
+@media (max-width: 480px) {
+  .job-item { flex-direction: column; align-items: flex-start; gap: 15px; }
+  .actions { width: 100%; display: flex; justify-content: space-between; }
+}
