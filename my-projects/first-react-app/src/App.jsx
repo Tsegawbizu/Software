@@ -4,12 +4,7 @@ import Stats from './components/Stats';
 
 
 
-<Stats 
-  totalJobs={totalJobs} 
-  interviewingCount={interviewingCount} 
-  offersCount={offersCount} 
-  successRate={successRate} 
-/>
+
 
 function App() {
   // --- 1. STATE & STORAGE ---
@@ -17,6 +12,13 @@ function App() {
     const savedJobs = localStorage.getItem("tsegaw-jobs");
     return savedJobs ? JSON.parse(savedJobs) : [];
   });
+
+  <Stats 
+  totalJobs={totalJobs} 
+  interviewingCount={interviewingCount} 
+  offersCount={offersCount} 
+  successRate={successRate} 
+/>
   
   const [input, setInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
