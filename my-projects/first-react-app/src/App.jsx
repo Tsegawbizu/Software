@@ -18,7 +18,7 @@ function App() {
   interviewingCount={interviewingCount} 
   offersCount={offersCount} 
   successRate={successRate} 
-/>
+  />
   
   const [input, setInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
