@@ -1,5 +1,15 @@
 import { useState, useEffect } from 'react'
 import './App.css'
+import Stats from './components/Stats';
+
+
+
+<Stats 
+  totalJobs={totalJobs} 
+  interviewingCount={interviewingCount} 
+  offersCount={offersCount} 
+  successRate={successRate} 
+/>
 
 function App() {
   // --- 1. STATE & STORAGE ---
