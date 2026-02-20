@@ -1,179 +1,353 @@
-.App { max-width: 600px; margin: 0 auto; padding: 20px; font-family: 'Inter', sans-serif; }
-.stats-container { display: flex; gap: 15px; margin-bottom: 20px; }
-.stat-card { background: #f0f4f8; padding: 10px; border-radius: 8px; flex: 1; text-align: center; }
-.stat-card span { display: block; font-size: 12px; color: #666; }
-.add-job-box { display: flex; gap: 10px; margin-bottom: 30px; }
-.controls { display: flex; gap: 10px; margin-bottom: 20px; }
-.search-bar { flex: 2; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
-
-
-.job-item { 
-  background: white; 
-  border: 1px solid #eee; 
-  padding: 15px; 
-  margin-bottom: 10px; 
-  border-radius: 8px; 
-  display: flex; 
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-.job-info { display: flex; flex-direction: column; text-align: left; }
-.job-info small { font-size: 11px; color: #999; margin: 4px 0; }
-
-.badge { font-size: 10px; padding: 3px 8px; border-radius: 4px; width: fit-content; text-transform: uppercase; font-weight: bold; }
-.badge.applied { background: #e3f2fd; color: #1976d2; }
-.badge.interviewing { background: #fffde7; color: #fbc02d; }
-.badge.offered { background: #e8f5e9; color: #388e3c; }
-.badge.rejected { background: #ffebee; color: #d32f2f; }
-
-.delete-btn { background: #ff5252; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-
-.modal-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  padding: 30px;
-  border-radius: 15px;
-  width: 90%;
-  max-width: 500px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.modal-content textarea {
-  height: 200px;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  font-family: inherit;
-}
-
-/* Day 5: Mobile Responsiveness */
-@media (max-width: 480px) {
-  .stats-container {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .controls {
-    flex-direction: column;
-  }
-  
-  .job-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  
-  .actions {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-  }
-}
-.footer-actions {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin-top: 30px;
-}
-
-.export-btn {
-  background-color: #4caf50;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-/* Progress Bar */
-.progress-container {
-  margin: 10px 0 30px;
-  text-align: left;
-}
-.progress-container p { font-size: 12px; font-weight: bold; margin-bottom: 5px; }
-.progress-bar-bg {
-  background: #e0e0e0;
-  height: 10px;
-  border-radius: 5px;
-  overflow: hidden;
-}
-.progress-bar-fill {
-  background: linear-gradient(to right, #2196f3, #4caf50);
-  height: 100%;
-  transition: width 0.5s ease-in-out;
-}
-
-/* Warnings */
-.warning-text {
-  color: #ff9800;
-  font-weight: bold;
-  margin-left: 5px;
-}
-
+/* --- 1. THEME VARIABLES --- */
 :root {
   --primary: #2196f3;
   --success: #4caf50;
   --danger: #ff5252;
   --warning: #ff9800;
-  --bg: #f5f7fa;
+  --bg-color: #f5f7fa;
+  --card-bg: #ffffff;
+  --text-main: #333333;
+  --border-color: #eeeeee;
 }
 
-.App { max-width: 600px; margin: 0 auto; padding: 20px; font-family: 'Segoe UI', sans-serif; background: var(--bg); min-height: 100vh; }
+body.dark-mode {
+  --bg-color: #121212;
+  --card-bg: #1e1e1e;
+  --text-main: #f0f0f0;
+  --border-color: #333333;
+}
 
-/* Stats & Progress */
-.stats-container { display: flex; gap: 10px; margin-bottom: 20px; }
-.stat-card { background: white; padding: 15px; border-radius: 12px; flex: 1; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-.stat-card span { display: block; font-size: 11px; color: #777; text-transform: uppercase; }
-.stat-card strong { font-size: 1.4rem; color: var(--primary); }
+/* --- 2. BASE STYLES --- */
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  transition: all 0.3s ease;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  margin: 0;
+  min-height: 100vh;
+}
 
-.progress-container { margin-bottom: 25px; }
-.progress-label { display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; margin-bottom: 6px; }
-.progress-bar-bg { background: #ddd; height: 8px; border-radius: 4px; overflow: hidden; }
-.progress-bar-fill { background: linear-gradient(to right, var(--primary), var(--success)); height: 100%; transition: width 0.4s ease; }
+.App {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+}
 
-/* Inputs & Controls */
-.add-job-box { display: flex; gap: 10px; margin-bottom: 20px; }
-.add-job-box input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ccc; }
-.controls { display: flex; gap: 10px; margin-bottom: 20px; }
-.search-bar { flex: 2; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
+h1 { text-align: center; margin-bottom: 30px; }
 
-/* List Items */
-.job-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-.job-info { display: flex; flex-direction: column; text-align: left; }
+/* --- 3. DASHBOARD & STATS --- */
+.stats-section { margin-bottom: 2rem; }
+
+.stats-container {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  flex: 1;
+  background-color: var(--card-bg);
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-card span {
+  font-size: 0.75rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-card strong {
+  font-size: 1.6rem;
+  color: var(--text-main);
+}
+
+.offer-highlight { color: var(--success) !important; }
+
+/* --- 4. PROGRESS & GOALS --- */
+.progress-container, .goal-tracker {
+  background: var(--card-bg);
+  padding: 1.2rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 20px;
+}
+
+.progress-label, .goal-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.progress-bar-bg {
+  background-color: var(--border-color);
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  background: linear-gradient(90deg, var(--primary), var(--success));
+  height: 100%;
+  transition: width 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.goal-header input {
+  width: 45px;
+  padding: 4px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-color);
+  color: var(--text-main);
+  text-align: center;
+}
+
+/* --- 5. INPUTS & CONTROLS --- */
+.add-job-box, .controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+input, select, textarea {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-main);
+  font-family: inherit;
+}
+
+.search-bar { flex: 2; }
+
+/* --- 6. JOB LIST & BADGES --- */
+.job-item {
+  background: var(--card-bg);
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.job-info { display: flex; flex-direction: column; }
 .job-info small { color: #888; font-size: 11px; margin: 4px 0; }
-.warning-text { color: var(--warning); }
+.warning-text { color: var(--warning); font-weight: bold; }
 
-.badge { font-size: 9px; padding: 3px 8px; border-radius: 20px; font-weight: bold; text-transform: uppercase; width: fit-content; }
+.badge {
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-weight: bold;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
 .badge.applied { background: #e3f2fd; color: #1976d2; }
 .badge.interviewing { background: #fff8e1; color: #fbc02d; }
 .badge.offered { background: #e8f5e9; color: #2e7d32; }
 .badge.rejected { background: #ffebee; color: #c62828; }
 
-/* Modal */
-.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 100; }
-.modal-content { background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 450px; display: flex; flex-direction: column; gap: 15px; }
-.modal-content textarea { height: 150px; padding: 12px; border-radius: 8px; border: 1px solid #ddd; resize: none; }
-.save-btn { background: var(--primary); color: white; padding: 12px; border-radius: 8px; font-weight: bold; }
+/* --- 7. MODALS & FOOTER --- */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
 
-/* Footer */
-.footer-actions { display: flex; gap: 10px; justify-content: center; margin-top: 30px; }
-.export-btn { background: #eee; border: 1px solid #ccc; font-size: 12px; padding: 8px 12px; border-radius: 6px; }
-.clear-btn { background: none; border: 1px solid var(--danger); color: var(--danger); font-size: 12px; padding: 8px 12px; border-radius: 6px; }
+.modal-content {
+  width: 90%;
+  max-width: 450px;
+  padding: 25px;
+  border-radius: 16px;
+}
 
-/* Mobile */
-@media (max-width: 480px) {
-  .job-item { flex-direction: column; align-items: flex-start; gap: 15px; }
+.footer-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.delete-btn { color: var(--danger); background: none; border: none; cursor: pointer; font-size: 1.2rem; }
+.clear-btn { color: var(--danger); border: 1px solid var(--danger); padding: 8px 12px; border-radius: 6px; background: none; cursor: pointer; }
+
+/* --- 8. RESPONSIVENESS --- */
+@media (max-width: 500px) {
+  .stats-container, .add-job-box, .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .job-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
   .actions { width: 100%; display: flex; justify-content: space-between; }
+}
+
+.reminder-box {
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.1), rgba(33, 150, 243, 0.05));
+  border: 1px solid var(--primary);
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.reminder-box h3 {
+  margin: 0 0 10px 0;
+  font-size: 1rem;
+  color: var(--primary);
+}
+
+.reminder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reminder-item {
+  display: flex;
+  justify-content: space-between;
+  background: var(--card-bg);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.reminder-item strong {
+  color: var(--text-main);
+}
+
+.reminder-item span {
+  color: var(--primary);
+  font-weight: bold;
+}
+
+/* --- THEME TOGGLE STYLING --- */
+.header-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.theme-switch-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.theme-switch {
+  display: inline-block;
+  height: 34px;
+  position: relative;
+  width: 60px;
+}
+
+.theme-switch input {
+  display: none;
+}
+
+.slider {
+  background-color: #ccc;
+  bottom: 0;
+  cursor: pointer;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: .4s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slider:before {
+  background-color: #fff;
+  bottom: 4px;
+  content: "";
+  height: 26px;
+  left: 4px;
+  position: absolute;
+  transition: .4s;
+  width: 26px;
+  z-index: 1;
+}
+
+input:checked + .slider {
+  background-color: var(--primary);
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+.slider .icon {
+  font-size: 14px;
+  z-index: 2;
+  transition: .4s;
+  /* Positions the icon relative to the sliding knob */
+  margin-left: -20px; 
+}
+
+input:checked + .slider .icon {
+  margin-left: 20px;
+}
+body {
+  /* ... your existing styles ... */
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+/* Update or add this to App.css */
+.goal-fill.completed {
+  background: linear-gradient(90deg, #4caf50, #81c784);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.6);
+  animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+.share-btn {
+  background: linear-gradient(135deg, #0077b5, #00a0dc); /* LinkedIn Colors */
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.share-btn:hover {
+  transform: translateY(-2px);
 }
