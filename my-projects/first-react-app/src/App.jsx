@@ -145,7 +145,20 @@ function App() {
     const diff = Math.abs(new Date() - new Date(dateString));
     return Math.floor(diff / (1000 * 60 * 60 * 24));
   };
-
+    <div style={{
+  position: 'sticky',
+  top: 0,
+  backgroundColor: 'white',
+  padding: '10px 0',
+  zIndex: 100,
+  borderBottom: '1px solid #eee',
+  display: 'flex',
+  gap: '8px',
+  overflowX: 'auto', // Allows swiping filters on small screens
+  whiteSpace: 'nowrap'
+}}>
+  {/* Your Status Pill Buttons Go Here */}
+</div>
   // --- 5. RENDER ---
   return (
     <div className="App">
