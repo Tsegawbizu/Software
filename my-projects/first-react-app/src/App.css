@@ -423,3 +423,51 @@ body {
   margin-top: 40px;
   padding: 15px;
 }
+
+.status-pills {
+  display: flex;
+  gap: 8px;
+  margin-top: 15px;
+  overflow-x: auto;
+  padding-bottom: 5px;
+}
+
+.pill {
+  white-space: nowrap;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pill.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.pill-count {
+  font-size: 0.7rem;
+  opacity: 0.8;
+  background: rgba(0,0,0,0.1);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.notes-preview {
+  font-size: 0.75rem;
+  color: gray;
+  font-style: italic;
+  margin: 5px 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-muted);
+}

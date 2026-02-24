@@ -41,7 +41,6 @@ function App() {
 
   const goalProgress = Math.min(Math.round((jobsThisWeek / weeklyGoal) * 100), 100);
 
-  // Weekly Trend Logic
   const getWeeklyHistory = () => {
     return [3, 2, 1, 0].map(weekOffset => {
       const end = new Date();
@@ -56,6 +55,11 @@ function App() {
     });
   };
   const weeklyHistory = getWeeklyHistory();
+
+  const filteredJobs = jobs.filter(j => 
+    (filterStatus === "All" || j.status === filterStatus) && 
+    j.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   // --- 3. EFFECTS ---
   useEffect(() => {
@@ -128,8 +132,11 @@ function App() {
   const restoreData = (e) => {
     const reader = new FileReader();
     reader.onload = (event) => {
-      setJobs(JSON.parse(event.target.result));
-      alert("Data Restored!");
+      try {
+        const data = JSON.parse(event.target.result);
+        setJobs(data);
+        alert("Data Restored!");
+      } catch(err) { alert("Invalid backup file."); }
     };
     reader.readAsText(e.target.files[0]);
   };
@@ -178,49 +185,92 @@ function App() {
       </div>
 
       <div className="card add-job-box">
-        <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Company Name..." />
+        <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Company Name..." onKeyDown={(e) => e.key === 'Enter' && addJob()}/>
         <input type="date" className="date-input" value={inputDate} onChange={(e) => setInputDate(e.target.value)} />
         <button onClick={addJob}>Add Job</button>
       </div>
 
       <div className="controls">
-        <input className="search-bar" placeholder="🔍 Search applications..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-          <option value="All">All Status</option>
-          {["Applied", "Interviewing", "Offered", "Rejected"].map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
+        <input 
+          className="search-bar" 
+          placeholder="🔍 Search applications..." 
+          value={searchTerm} 
+          onChange={(e) => setSearchTerm(e.target.value)} 
+        />
+        
+        <div className="status-pills">
+          {["All", "Applied", "Interviewing", "Offered", "Rejected"].map(status => (
+            <button 
+              key={status}
+              className={`pill ${filterStatus === status ? 'active' : ''}`}
+              onClick={() => setFilterStatus(status)}
+            >
+              {status} 
+              <span className="pill-count">
+                {status === "All" ? jobs.length : jobs.filter(j => j.status === status).length}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="job-list">
-        {jobs.filter(j => (filterStatus === "All" || j.status === filterStatus) && j.title.toLowerCase().includes(searchTerm.toLowerCase())).map(job => {
-          const days = getDaysSince(job.date);
-          const isStale = days > 14 && job.status === "Applied";
-          return (
-            <div key={job.id} className={`job-item ${isStale ? 'stale' : ''}`}>
-              <div className="job-info">
-                <strong>{job.title}</strong>
-                <small>{job.date} ({days}d ago) {isStale && <span className="warning">⚠️ Follow up!</span>}</small>
-                <span className={`badge ${job.status.toLowerCase()}`}>{job.status}</span>
+        {filteredJobs.length > 0 ? (
+          filteredJobs.map(job => {
+            const days = getDaysSince(job.date);
+            const isStale = days > 14 && job.status === "Applied";
+            return (
+              <div key={job.id} className={`job-item ${isStale ? 'stale' : ''}`}>
+                <div className="job-info">
+                  <strong>{job.title}</strong>
+                  <small>{job.date} ({days}d ago) {isStale && <span className="warning">⚠️ Follow up!</span>}</small>
+                  {job.notes && <p className="notes-preview">📄 {job.notes.substring(0, 50)}...</p>}
+                  <span className={`badge ${job.status.toLowerCase()}`}>{job.status}</span>
+                </div>
+                <div className="actions">
+                  <button onClick={() => setEditingJob(job)} title="Edit Notes">📝</button>
+                  <button onClick={() => toggleStatus(job.id)} title="Next Status">↻</button>
+                  <button onClick={() => setJobs(jobs.filter(j => j.id !== job.id))} className="delete-btn">🗑️</button>
+                </div>
               </div>
-              <div className="actions">
-                <button onClick={() => setEditingJob(job)}>📝</button>
-                <button onClick={() => toggleStatus(job.id)}>↻</button>
-                <button onClick={() => setJobs(jobs.filter(j => j.id !== job.id))} className="delete-btn">🗑️</button>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        ) : (
+          <div className="empty-state">
+            <p>No results found for "{filterStatus}"</p>
+            {searchTerm && <button onClick={() => setSearchTerm("")}>Clear Search</button>}
+          </div>
+        )}
       </div>
 
       <footer className="footer-actions card">
         <div className="data-btns">
-          <button onClick={backupData}>JSON Backup</button>
-          <label className="upload-label">
+          <button onClick={backupData} className="btn-secondary">JSON Backup</button>
+          <label className="btn-secondary upload-label">
             Restore <input type="file" onChange={restoreData} hidden />
           </label>
         </div>
         <button onClick={() => window.confirm("Clear all?") && setJobs([])} className="clear-btn">Clear All Data</button>
       </footer>
+
+      {/* Editing Modal */}
+      {editingJob && (
+        <div className="modal-overlay" onClick={() => setEditingJob(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+             <h3>Edit Notes: {editingJob.title}</h3>
+             <textarea 
+               value={editingJob.notes} 
+               onChange={(e) => {
+                 const updated = {...editingJob, notes: e.target.value};
+                 setEditingJob(updated);
+                 setJobs(jobs.map(j => j.id === editingJob.id ? updated : j));
+               }}
+               placeholder="Enter job link or interview notes..."
+             />
+             <button onClick={() => setEditingJob(null)}>Save & Close</button>
+          </div>
+        </div>
+      )}
 
       {/* Hidden for Exporting */}
       <div style={{ position: 'absolute', left: '-9999px' }}>
