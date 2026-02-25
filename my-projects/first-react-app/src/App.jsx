@@ -32,6 +32,11 @@ function App() {
   const offersCount = jobs.filter(j => j.status === "Offered").length;
   const successRate = totalJobs > 0 ? Math.round(((interviewingCount + offersCount) / totalJobs) * 100) : 0;
 
+  // Day 11: Pipeline Value Logic
+  const pipelineValue = jobs
+    .filter(j => j.status !== "Rejected")
+    .reduce((sum, job) => sum + (Number(job.salary) || 0), 0);
+
   const jobsThisWeek = jobs.filter(job => {
     const jobDate = new Date(job.date);
     const sevenDaysAgo = new Date();
@@ -86,6 +91,7 @@ function App() {
       title: input, 
       status: "Applied",
       date: inputDate, 
+      salary: 0, 
       notes: "",
       interviewDate: "" 
     };
@@ -145,9 +151,9 @@ function App() {
 
   return (
     <div className="App">
-      {/* HEADER & THEME TOGGLE */}
       <header className="header-nav">
         <h1>💼 Tsegaw's Tracker</h1>
+        <div className="pipeline-mini">💰 Pipeline: ${pipelineValue.toLocaleString()}</div>
         <label className="theme-switch">
           <input type="checkbox" onChange={() => setIsDarkMode(!isDarkMode)} checked={isDarkMode} />
           <div className="slider round">
@@ -156,14 +162,18 @@ function App() {
         </label>
       </header>
 
-      {/* DASHBOARD GRID */}
       <div className="stats-grid">
-        <Stats 
-          totalJobs={totalJobs} interviewingCount={interviewingCount} 
-          offersCount={offersCount} successRate={successRate} 
-          jobsThisWeek={jobsThisWeek} weeklyGoal={weeklyGoal}
-          setWeeklyGoal={setWeeklyGoal} goalProgress={goalProgress}
-        />
+      <Stats 
+  totalJobs={totalJobs} 
+  interviewingCount={interviewingCount} 
+  offersCount={offersCount} 
+  successRate={successRate} 
+  jobsThisWeek={jobsThisWeek} 
+  weeklyGoal={weeklyGoal}
+  setWeeklyGoal={setWeeklyGoal} 
+  goalProgress={goalProgress}
+  pipelineValue={pipelineValue} // <--- Don't forget this!
+/>
         
         <div className="card chart-box">
           <h3>📊 Weekly Activity</h3>
@@ -180,11 +190,10 @@ function App() {
         </div>
       </div>
 
-      <div className="main-actions" style={{ marginBottom: '20px' }}>
+      <div className="main-actions">
         <button onClick={shareStats} className="share-btn">📤 Export Stats Image</button>
       </div>
 
-      {/* ADD JOB BOX */}
       <div className="card add-job-box">
         <input 
           type="text" 
@@ -202,16 +211,13 @@ function App() {
         <button onClick={addJob}>Add Job</button>
       </div>
 
-      {/* SEARCH & STICKY FILTERS */}
-      <div className="controls-container" style={{ position: 'sticky', top: 0, background: 'var(--bg-color)', zIndex: 10, padding: '10px 0' }}>
+      <div className="controls-container">
         <input 
           className="search-bar" 
           placeholder="🔍 Search applications..." 
           value={searchTerm} 
           onChange={(e) => setSearchTerm(e.target.value)} 
-          style={{ width: '100%', marginBottom: '10px' }}
         />
-        
         <div className="status-pills">
           {["All", "Applied", "Interviewing", "Offered", "Rejected"].map(status => (
             <button 
@@ -228,22 +234,42 @@ function App() {
         </div>
       </div>
 
-      {/* JOB LIST (Optimized for Mobile Cards via CSS) */}
       <div className="job-list">
         {filteredJobs.length > 0 ? (
           filteredJobs.map(job => {
             const days = getDaysSince(job.date);
-            const isStale = days > 14 && job.status === "Applied";
+            const isStale = days >= 7 && job.status === "Applied";
+            
+            // Interview Countdown Calculation
+            let countdown = null;
+            if (job.status === "Interviewing" && job.interviewDate) {
+                const diff = new Date(job.interviewDate) - new Date();
+                countdown = Math.ceil(diff / (1000 * 60 * 60 * 24));
+            }
+
             return (
               <div key={job.id} className={`job-item ${isStale ? 'stale' : ''}`}>
                 <div className="job-info">
-                  <strong>{job.title}</strong>
-                  <small>{job.date} ({days}d ago) {isStale && <span className="warning">⚠️ Follow up!</span>}</small>
-                  {job.notes && <p className="notes-preview">📄 {job.notes.substring(0, 50)}...</p>}
-                  <span className={`badge ${job.status.toLowerCase()}`}>{job.status}</span>
+                  <div className="title-row">
+                    <strong>{job.title}</strong>
+                    {isStale && <span className="follow-up-pill">🔔 Follow up!</span>}
+                  </div>
+                  
+                  <small>{job.date} ({days}d ago)</small>
+                  
+                  {countdown !== null && (
+                    <div className="interview-countdown">
+                      📅 {countdown > 0 ? `Interview in ${countdown} days` : countdown === 0 ? "Interview Today!" : "Interview Passed"}
+                    </div>
+                  )}
+
+                  <div className="job-meta">
+                    <span className={`badge ${job.status.toLowerCase()}`}>{job.status}</span>
+                    {job.salary > 0 && <span className="salary-tag">💰 ${job.salary.toLocaleString()}</span>}
+                  </div>
                 </div>
                 <div className="actions">
-                  <button onClick={() => setEditingJob(job)} title="Edit Notes">📝</button>
+                  <button onClick={() => setEditingJob(job)} title="Edit Details">📝</button>
                   <button onClick={() => toggleStatus(job.id)} title="Next Status">↻</button>
                   <button onClick={() => setJobs(jobs.filter(j => j.id !== job.id))} className="delete-btn">🗑️</button>
                 </div>
@@ -252,28 +278,51 @@ function App() {
           })
         ) : (
           <div className="empty-state">
-            <p>No results found for "{filterStatus}"</p>
-            {searchTerm && <button onClick={() => setSearchTerm("")}>Clear Search</button>}
+            <p>No results found</p>
           </div>
         )}
       </div>
 
-      {/* FOOTER ACTIONS */}
       <footer className="footer-actions card">
         <div className="data-btns">
           <button onClick={backupData} className="btn-secondary">JSON Backup</button>
-          <label className="btn-secondary upload-label" style={{ cursor: 'pointer' }}>
+          <label className="btn-secondary upload-label">
             Restore <input type="file" onChange={restoreData} hidden />
           </label>
         </div>
-        <button onClick={() => window.confirm("Clear all?") && setJobs([])} className="clear-btn">Clear All Data</button>
+        <button onClick={() => window.confirm("Clear all?") && setJobs([])} className="clear-btn">Clear All</button>
       </footer>
 
-      {/* NOTES MODAL */}
       {editingJob && (
         <div className="modal-overlay" onClick={() => setEditingJob(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-             <h3>Edit Notes: {editingJob.title}</h3>
+             <h3>Edit: {editingJob.title}</h3>
+             
+             <label>Salary Expectation ($)</label>
+             <input 
+                type="number"
+                value={editingJob.salary || ""}
+                onChange={(e) => {
+                    const updated = {...editingJob, salary: Number(e.target.value)};
+                    setEditingJob(updated);
+                    setJobs(jobs.map(j => j.id === editingJob.id ? updated : j));
+                }}
+                className="modal-input"
+             />
+
+             <label>Interview Date</label>
+             <input 
+                type="date"
+                value={editingJob.interviewDate || ""}
+                onChange={(e) => {
+                    const updated = {...editingJob, interviewDate: e.target.value};
+                    setEditingJob(updated);
+                    setJobs(jobs.map(j => j.id === editingJob.id ? updated : j));
+                }}
+                className="modal-input"
+             />
+
+             <label>Notes</label>
              <textarea 
                value={editingJob.notes} 
                onChange={(e) => {
@@ -281,23 +330,17 @@ function App() {
                  setEditingJob(updated);
                  setJobs(jobs.map(j => j.id === editingJob.id ? updated : j));
                }}
-               placeholder="Enter job link or interview notes..."
-               style={{ width: '100%', height: '150px', marginBottom: '15px' }}
+               placeholder="Job link, contact person, etc..."
              />
-             <button onClick={() => setEditingJob(null)}>Save & Close</button>
+             <button onClick={() => setEditingJob(null)} className="save-btn">Save & Close</button>
           </div>
         </div>
       )}
 
-      {/* HIDDEN EXPORT AREA */}
       <div style={{ position: 'absolute', left: '-9999px' }}>
-        <div id="stats-summary" style={{ padding: '20px', width: '400px', textAlign: 'center' }}>
+        <div id="stats-summary" style={{ padding: '20px', width: '400px', textAlign: 'center', background: 'white', color: 'black' }}>
           <h2>My Career Progress 🚀</h2>
-          <div style={{ display: 'flex', justifyContent: 'space-around', margin: '20px 0' }}>
-            <div><p>Applied</p><h3>{totalJobs}</h3></div>
-            <div><p>Interviews</p><h3>{interviewingCount}</h3></div>
-            <div><p>Offers</p><h3>{offersCount}</h3></div>
-          </div>
+          <p>Applied: {totalJobs} | Offers: {offersCount}</p>
           <p>Success Rate: {successRate}%</p>
         </div>
       </div>
