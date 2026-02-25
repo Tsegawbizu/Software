@@ -41,20 +41,17 @@ function App() {
 
   const goalProgress = Math.min(Math.round((jobsThisWeek / weeklyGoal) * 100), 100);
 
-  const getWeeklyHistory = () => {
-    return [3, 2, 1, 0].map(weekOffset => {
-      const end = new Date();
-      end.setDate(end.getDate() - (weekOffset * 7));
-      const start = new Date();
-      start.setDate(start.getDate() - ((weekOffset + 1) * 7));
-      const count = jobs.filter(job => {
-        const d = new Date(job.date);
-        return d > start && d <= end;
-      }).length;
-      return { label: weekOffset === 0 ? "Now" : `${weekOffset}w ago`, count };
-    });
-  };
-  const weeklyHistory = getWeeklyHistory();
+  const weeklyHistory = [3, 2, 1, 0].map(weekOffset => {
+    const end = new Date();
+    end.setDate(end.getDate() - (weekOffset * 7));
+    const start = new Date();
+    start.setDate(start.getDate() - ((weekOffset + 1) * 7));
+    const count = jobs.filter(job => {
+      const d = new Date(job.date);
+      return d > start && d <= end;
+    }).length;
+    return { label: weekOffset === 0 ? "Now" : `${weekOffset}w ago`, count };
+  });
 
   const filteredJobs = jobs.filter(j => 
     (filterStatus === "All" || j.status === filterStatus) && 
@@ -76,7 +73,7 @@ function App() {
   }, [isDarkMode]);
 
   useEffect(() => {
-    if (jobsThisWeek === weeklyGoal && jobsThisWeek > 0) {
+    if (jobsThisWeek >= weeklyGoal && jobsThisWeek > 0) {
       confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
     }
   }, [jobsThisWeek, weeklyGoal]);
@@ -88,7 +85,7 @@ function App() {
       id: Date.now(), 
       title: input, 
       status: "Applied",
-      date: new Date(inputDate).toLocaleDateString(), 
+      date: inputDate, 
       notes: "",
       interviewDate: "" 
     };
@@ -100,22 +97,22 @@ function App() {
     const statuses = ["Applied", "Interviewing", "Offered", "Rejected"];
     setJobs(jobs.map(job => {
       if (job.id === id) {
-        const nextStatus = statuses[(statuses.indexOf(job.status) + 1) % statuses.length];
-        let iDate = job.interviewDate;
-        if (nextStatus === "Interviewing") iDate = window.prompt("Interview Date?", iDate) || iDate;
-        return { ...job, status: nextStatus, interviewDate: iDate };
+        const currentIndex = statuses.indexOf(job.status);
+        const nextStatus = statuses[(currentIndex + 1) % statuses.length];
+        return { ...job, status: nextStatus };
       }
       return job;
     }));
   };
 
   const shareStats = async () => {
-    const canvas = await html2canvas(document.getElementById('stats-summary'), {
+    const element = document.getElementById('stats-summary');
+    const canvas = await html2canvas(element, {
       backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff',
       scale: 2,
     });
     const link = document.createElement('a');
-    link.download = `tsegaw-career-progress.png`;
+    link.download = `career-progress.png`;
     link.href = canvas.toDataURL();
     link.click();
   };
@@ -145,31 +142,21 @@ function App() {
     const diff = Math.abs(new Date() - new Date(dateString));
     return Math.floor(diff / (1000 * 60 * 60 * 24));
   };
-    <div style={{
-  position: 'sticky',
-  top: 0,
-  backgroundColor: 'white',
-  padding: '10px 0',
-  zIndex: 100,
-  borderBottom: '1px solid #eee',
-  display: 'flex',
-  gap: '8px',
-  overflowX: 'auto', // Allows swiping filters on small screens
-  whiteSpace: 'nowrap'
-}}>
-  {/* Your Status Pill Buttons Go Here */}
-</div>
-  // --- 5. RENDER ---
+
   return (
     <div className="App">
+      {/* HEADER & THEME TOGGLE */}
       <header className="header-nav">
         <h1>💼 Tsegaw's Tracker</h1>
         <label className="theme-switch">
           <input type="checkbox" onChange={() => setIsDarkMode(!isDarkMode)} checked={isDarkMode} />
-          <div className="slider round"><span className="icon">{isDarkMode ? '🌙' : '☀️'}</span></div>
+          <div className="slider round">
+            <span className="icon">{isDarkMode ? '🌙' : '☀️'}</span>
+          </div>
         </label>
       </header>
 
+      {/* DASHBOARD GRID */}
       <div className="stats-grid">
         <Stats 
           totalJobs={totalJobs} interviewingCount={interviewingCount} 
@@ -183,7 +170,7 @@ function App() {
           <div className="chart-container">
             {weeklyHistory.map((w, i) => (
               <div key={i} className="chart-column">
-                <div className="chart-bar" style={{ height: `${w.count * 15 + 5}px` }}>
+                <div className="chart-bar" style={{ height: `${(w.count * 15) + 5}px` }}>
                   <span className="bar-value">{w.count}</span>
                 </div>
                 <span className="bar-label">{w.label}</span>
@@ -193,22 +180,36 @@ function App() {
         </div>
       </div>
 
-      <div className="main-actions">
+      <div className="main-actions" style={{ marginBottom: '20px' }}>
         <button onClick={shareStats} className="share-btn">📤 Export Stats Image</button>
       </div>
 
+      {/* ADD JOB BOX */}
       <div className="card add-job-box">
-        <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Company Name..." onKeyDown={(e) => e.key === 'Enter' && addJob()}/>
-        <input type="date" className="date-input" value={inputDate} onChange={(e) => setInputDate(e.target.value)} />
+        <input 
+          type="text" 
+          value={input} 
+          onChange={(e) => setInput(e.target.value)} 
+          placeholder="Company Name..." 
+          onKeyDown={(e) => e.key === 'Enter' && addJob()}
+        />
+        <input 
+          type="date" 
+          className="date-input" 
+          value={inputDate} 
+          onChange={(e) => setInputDate(e.target.value)} 
+        />
         <button onClick={addJob}>Add Job</button>
       </div>
 
-      <div className="controls">
+      {/* SEARCH & STICKY FILTERS */}
+      <div className="controls-container" style={{ position: 'sticky', top: 0, background: 'var(--bg-color)', zIndex: 10, padding: '10px 0' }}>
         <input 
           className="search-bar" 
           placeholder="🔍 Search applications..." 
           value={searchTerm} 
           onChange={(e) => setSearchTerm(e.target.value)} 
+          style={{ width: '100%', marginBottom: '10px' }}
         />
         
         <div className="status-pills">
@@ -227,6 +228,7 @@ function App() {
         </div>
       </div>
 
+      {/* JOB LIST (Optimized for Mobile Cards via CSS) */}
       <div className="job-list">
         {filteredJobs.length > 0 ? (
           filteredJobs.map(job => {
@@ -256,17 +258,18 @@ function App() {
         )}
       </div>
 
+      {/* FOOTER ACTIONS */}
       <footer className="footer-actions card">
         <div className="data-btns">
           <button onClick={backupData} className="btn-secondary">JSON Backup</button>
-          <label className="btn-secondary upload-label">
+          <label className="btn-secondary upload-label" style={{ cursor: 'pointer' }}>
             Restore <input type="file" onChange={restoreData} hidden />
           </label>
         </div>
         <button onClick={() => window.confirm("Clear all?") && setJobs([])} className="clear-btn">Clear All Data</button>
       </footer>
 
-      {/* Editing Modal */}
+      {/* NOTES MODAL */}
       {editingJob && (
         <div className="modal-overlay" onClick={() => setEditingJob(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -279,17 +282,18 @@ function App() {
                  setJobs(jobs.map(j => j.id === editingJob.id ? updated : j));
                }}
                placeholder="Enter job link or interview notes..."
+               style={{ width: '100%', height: '150px', marginBottom: '15px' }}
              />
              <button onClick={() => setEditingJob(null)}>Save & Close</button>
           </div>
         </div>
       )}
 
-      {/* Hidden for Exporting */}
+      {/* HIDDEN EXPORT AREA */}
       <div style={{ position: 'absolute', left: '-9999px' }}>
-        <div id="stats-summary" className="share-card">
+        <div id="stats-summary" style={{ padding: '20px', width: '400px', textAlign: 'center' }}>
           <h2>My Career Progress 🚀</h2>
-          <div className="share-stats">
+          <div style={{ display: 'flex', justifyContent: 'space-around', margin: '20px 0' }}>
             <div><p>Applied</p><h3>{totalJobs}</h3></div>
             <div><p>Interviews</p><h3>{interviewingCount}</h3></div>
             <div><p>Offers</p><h3>{offersCount}</h3></div>
