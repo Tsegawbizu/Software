@@ -4,15 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "homepage": "https://tsegawbizu.github.io/Software",
-  "scripts": {
-    "dev": "vite",
-    "build": "set CI=false&&vite build",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
-  },
+ "scripts": {
+  "dev": "vite",
+  "build": "cross-env CI=false vite build",
+  "predeploy": "npm run build",
+  "deploy": "gh-pages -d dist"
+},
   "dependencies": {
     "canvas-confetti": "^1.9.4",
-    "cross-env": "^10.1.0",
     "html2canvas": "^1.4.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
@@ -22,6 +21,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
+    "cross-env": "^10.1.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
