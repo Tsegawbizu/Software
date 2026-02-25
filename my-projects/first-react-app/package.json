@@ -5,13 +5,13 @@
   "type": "module",
   "homepage": "https://tsegaw-code.github.io/Software",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
-  },
+  "dev": "vite",
+  "build": "CI=false vite build", 
+  "lint": "eslint .",
+  "preview": "vite preview",
+  "predeploy": "npm run build",
+  "deploy": "gh-pages -d dist"
+},
   "dependencies": {
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
