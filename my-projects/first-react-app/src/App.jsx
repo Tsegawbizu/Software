@@ -71,14 +71,16 @@ function App() {
     return { label: weekOffset === 0 ? "Now" : `${weekOffset}w ago`, count };
   });
 
-  // Day 21: Updated Filtering Logic to include Notes Search
-  const filteredJobs = jobs.filter(j => {
-    const matchesStatus = filterStatus === "All" || j.status === filterStatus;
-    const matchesTitle = j.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesNotes = j.notes.toLowerCase().includes(noteSearchTerm.toLowerCase());
-    
-    return matchesStatus && matchesTitle && matchesNotes;
-  });
+  // Day 21 & 22: Updated Filtering Logic + Priority Sorting
+  const filteredJobs = jobs
+    .filter(j => {
+      const matchesStatus = filterStatus === "All" || j.status === filterStatus;
+      const matchesTitle = j.title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesNotes = j.notes.toLowerCase().includes(noteSearchTerm.toLowerCase());
+      return matchesStatus && matchesTitle && matchesNotes;
+    })
+    // Sort so priority stars appear at the top
+    .sort((a, b) => (b.isPriority === a.isPriority ? 0 : b.isPriority ? 1 : -1));
 
   const columns = {
     Applied: filteredJobs.filter(j => j.status === "Applied"),
@@ -125,6 +127,18 @@ function App() {
     }));
   };
 
+  // Day 22: Priority Toggle Function
+  const togglePriority = (id) => {
+    setJobs(jobs.map(job => {
+      if (job.id === id) {
+        const newState = !job.isPriority;
+        if (newState) toast("Dream Job Flagged! ⭐", { icon: '🔥' });
+        return { ...job, isPriority: newState };
+      }
+      return job;
+    }));
+  };
+
   const addJob = () => {
     if (!input.trim()) {
       toast.error("Please enter a company name!");
@@ -141,7 +155,8 @@ function App() {
       salary: 0, 
       notes: notesTemplate, 
       interviewDate: "",
-      tasks: [] 
+      tasks: [],
+      isPriority: false // Day 22: Added property
     };
     setJobs([newJob, ...jobs]);
     setInput("");
@@ -289,9 +304,8 @@ function App() {
             className="search-bar" placeholder="🔍 Search company..." 
             value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} 
           />
-          {/* Day 21: New Notes Search Input */}
           <input 
-            className="search-bar notes-search" placeholder="📝 Search inside notes (Python, Remote...)" 
+            className="search-bar notes-search" placeholder="📝 Search inside notes..." 
             value={noteSearchTerm} onChange={(e) => setNoteSearchTerm(e.target.value)} 
           />
         </div>
@@ -328,14 +342,24 @@ function App() {
                         <Draggable key={job.id} draggableId={job.id.toString()} index={index}>
                           {(provided) => (
                             <div 
-                              className={`job-card-mini ${isInterviewSoon(job.interviewDate) ? 'interview-alert' : ''}`}
+                              className={`job-card-mini ${isInterviewSoon(job.interviewDate) ? 'interview-alert' : ''} ${job.isPriority ? 'priority-border' : ''}`}
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                             >
                               {isInterviewSoon(job.interviewDate) && <div className="alert-badge">⏰ INTERVIEW SOON</div>}
                               <div className="card-header">
-                                <strong>{job.title}</strong>
+                                <div className="title-wrapper" style={{display: 'flex', alignItems: 'center'}}>
+                                  {/* Day 22: Priority Toggle Button */}
+                                  <button 
+                                    className={`priority-btn ${job.isPriority ? 'active' : ''}`}
+                                    onClick={(e) => { e.stopPropagation(); togglePriority(job.id); }}
+                                    style={{background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', marginRight: '5px'}}
+                                  >
+                                    {job.isPriority ? '⭐' : '☆'}
+                                  </button>
+                                  <strong>{job.title}</strong>
+                                </div>
                                 <button onClick={() => setEditingJob(job)}>📝</button>
                               </div>
                               <div className="card-meta">
@@ -369,8 +393,15 @@ function App() {
       ) : (
         <div className="job-list">
           {filteredJobs.map(job => (
-            <div key={job.id} className="job-item">
+            <div key={job.id} className={`job-item ${job.isPriority ? 'priority-border' : ''}`}>
               <div className="job-info">
+                <button 
+                    className={`priority-btn ${job.isPriority ? 'active' : ''}`}
+                    onClick={() => togglePriority(job.id)}
+                    style={{background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', marginRight: '10px'}}
+                >
+                    {job.isPriority ? '⭐' : '☆'}
+                </button>
                 <strong>{job.title}</strong>
                 <span className={`badge ${job.status.toLowerCase()}`}>{job.status}</span>
               </div>
@@ -428,10 +459,6 @@ function App() {
                         }}
                       ></div>
                     </div>
-                    <small className="meter-caption">
-                      {editingJob.salary < SALARY_BENCHMARKS.mid ? "Competitive for Junior" : 
-                      editingJob.salary < SALARY_BENCHMARKS.senior ? "Mid-Level Range" : "Senior-Level Range"}
-                    </small>
                   </div>
                 )}
                 
@@ -506,7 +533,6 @@ function App() {
             <textarea 
               value={editingJob.notes} 
               className="modal-notes"
-              placeholder="Details about the role..."
               onChange={(e) => {
                 const updated = {...editingJob, notes: e.target.value};
                 setEditingJob(updated);

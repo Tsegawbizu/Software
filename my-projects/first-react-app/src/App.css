@@ -1074,3 +1074,71 @@ body {
     gap: 10px;
   }
 }
+
+.priority-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0;
+  margin-right: 8px;
+  transition: transform 0.2s ease;
+}
+
+.priority-btn:hover {
+  transform: scale(1.2);
+}
+
+.priority-btn.active {
+  filter: drop-shadow(0 0 5px #f1c40f);
+}
+
+/* Highlighting the entire card if it's a priority */
+.job-card-mini.priority-border {
+  border-left: 5px solid #f1c40f !important;
+  background: linear-gradient(to right, rgba(241, 196, 15, 0.05), transparent);
+}
+/* The Star Button */
+.priority-btn {
+  transition: all 0.3s ease;
+  opacity: 0.5;
+}
+
+.priority-btn:hover {
+  transform: scale(1.3);
+  opacity: 1;
+}
+
+.priority-btn.active {
+  opacity: 1;
+  color: #f1c40f; /* Gold */
+  text-shadow: 0 0 8px rgba(241, 196, 15, 0.6);
+}
+
+/* The Card Glow */
+.job-card-mini.priority-border {
+  border-left: 6px solid #f1c40f !important;
+  background: linear-gradient(
+    to right, 
+    rgba(241, 196, 15, 0.1), 
+    transparent
+  );
+  box-shadow: 0 4px 15px rgba(241, 196, 15, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle 'Top Pick' background text for List View */
+.job-item.priority-border {
+  border-left: 6px solid #f1c40f;
+  background-color: rgba(241, 196, 15, 0.05);
+}
+
+/* Dark Mode adjustment for Priority cards */
+.dark-mode .job-card-mini.priority-border {
+  background: linear-gradient(
+    to right, 
+    rgba(241, 196, 15, 0.15), 
+    rgba(30, 30, 30, 1)
+  );
+}
