@@ -59,7 +59,7 @@ function App() {
     const end = new Date();
     end.setDate(end.getDate() - (weekOffset * 7));
     const start = new Date();
-    start.setDate(start.getDate() - ((weekOffset + 1) * 7));
+    start.setDate(start.setDate() - ((weekOffset + 1) * 7));
     const count = jobs.filter(job => {
       const d = new Date(job.date);
       return d > start && d <= end;
@@ -122,13 +122,17 @@ function App() {
       toast.error("Please enter a company name!");
       return;
     }
+
+    // Day 19: Notes Template
+    const notesTemplate = `✅ PROS: \n- \n\n❌ CONS: \n- \n\n🏢 CULTURE: \n- `;
+
     const newJob = { 
       id: Date.now(), 
       title: input, 
       status: "Applied",
       date: inputDate, 
       salary: 0, 
-      notes: "",
+      notes: notesTemplate, 
       interviewDate: "",
       tasks: [] 
     };
@@ -378,7 +382,6 @@ function App() {
                   className="modal-input"
                 />
 
-                {/* Day 18: Salary Meter */}
                 {editingJob.salary > 0 && (
                   <div className="salary-meter-container">
                     <div className="meter-labels">
@@ -454,10 +457,27 @@ function App() {
               </div>
             </div>
 
-            <label>📝 Notes</label>
+            {/* Day 19: Notes Section with Reset Template */}
+            <div className="modal-notes-header">
+              <label>📝 Interview & Role Notes</label>
+              <button 
+                className="reset-template-btn"
+                onClick={() => {
+                  if(window.confirm("Reset notes to template?")) {
+                    const template = `✅ PROS: \n- \n\n❌ CONS: \n- \n\n🏢 CULTURE: \n- `;
+                    const updated = {...editingJob, notes: template};
+                    setEditingJob(updated);
+                    setJobs(jobs.map(j => j.id === editingJob.id ? updated : j));
+                  }
+                }}
+              >
+                ♻️ Reset Template
+              </button>
+            </div>
             <textarea 
               value={editingJob.notes} 
               className="modal-notes"
+              placeholder="Details about the role..."
               onChange={(e) => {
                 const updated = {...editingJob, notes: e.target.value};
                 setEditingJob(updated);
