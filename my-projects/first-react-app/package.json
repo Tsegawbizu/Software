@@ -4,17 +4,20 @@
   "version": "0.0.0",
   "type": "module",
   "homepage": "https://tsegawbizu.github.io/Software",
- "scripts": {
-  "dev": "vite",
-  "build": "cross-env CI=false vite build",
-  "predeploy": "npm run build",
-  "deploy": "gh-pages -d dist"
-},
+  "scripts": {
+    "dev": "vite",
+    "build": "cross-env CI=false vite build",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
+  },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
     "canvas-confetti": "^1.9.4",
+    "framer-motion": "^12.34.3",
     "html2canvas": "^1.4.1",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "react-hot-toast": "^2.6.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
