@@ -6,7 +6,31 @@ import { Toaster, toast } from 'react-hot-toast';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import './App.css';
 
-// Day 18: Salary Benchmarks
+// --- NEW COMPONENT: Day 24 Brand Intelligence ---
+const CompanyLogo = ({ company, size = 30 }) => {
+  const [error, setError] = useState(false);
+  // Simple domain guesser for the API
+  const domain = company.toLowerCase().replace(/\s+/g, '') + ".com";
+
+  if (error) {
+    return (
+      <div className="logo-fallback" style={{ width: size, height: size }}>
+        {company.charAt(0).toUpperCase()}
+      </div>
+    );
+  }
+
+  return (
+    <img 
+      src={`https://img.logo.dev/${domain}?token=pk_YOUR_FREE_TOKEN`} // 2026 Modern API
+      alt={company}
+      className="company-logo-img"
+      onError={() => setError(true)}
+      style={{ width: size, height: size }}
+    />
+  );
+};
+
 const SALARY_BENCHMARKS = {
   junior: 60000,
   mid: 95000,
@@ -106,8 +130,6 @@ function App() {
   }, [jobsThisWeek, weeklyGoal]);
 
   // --- 4. ACTIONS & HELPERS ---
-  
-  // Day 23: Calculate "Ghosting" period
   const getDaysSinceUpdate = (lastModified) => {
     if (!lastModified) return 0;
     const diff = Math.abs(new Date() - new Date(lastModified));
@@ -124,7 +146,7 @@ function App() {
     setJobs(prevJobs => prevJobs.map(job => {
       if (job.id.toString() === draggableId) {
         if (job.status !== newStatus) toast.success(`Moved to ${newStatus}`);
-        return { ...job, status: newStatus, lastModified: Date.now() }; // Updated lastModified
+        return { ...job, status: newStatus, lastModified: Date.now() }; 
       }
       return job;
     }));
@@ -135,7 +157,7 @@ function App() {
       if (job.id === id) {
         const newState = !job.isPriority;
         if (newState) toast("Dream Job Flagged! ⭐", { icon: '🔥' });
-        return { ...job, isPriority: newState, lastModified: Date.now() }; // Updated lastModified
+        return { ...job, isPriority: newState, lastModified: Date.now() };
       }
       return job;
     }));
@@ -146,9 +168,7 @@ function App() {
       toast.error("Please enter a company name!");
       return;
     }
-
     const notesTemplate = `✅ PROS: \n- \n\n❌ CONS: \n- \n\n🏢 CULTURE: \n- `;
-
     const newJob = { 
       id: Date.now(), 
       title: input, 
@@ -159,7 +179,7 @@ function App() {
       interviewDate: "",
       tasks: [],
       isPriority: false,
-      lastModified: Date.now() // Day 23 initial timestamp
+      lastModified: Date.now() 
     };
     setJobs([newJob, ...jobs]);
     setInput("");
@@ -173,7 +193,7 @@ function App() {
         const currentIndex = statuses.indexOf(job.status);
         const nextStatus = statuses[(currentIndex + 1) % statuses.length];
         toast(`Moved to ${nextStatus}`, { icon: '🔄' });
-        return { ...job, status: nextStatus, lastModified: Date.now() }; // Updated lastModified
+        return { ...job, status: nextStatus, lastModified: Date.now() };
       }
       return job;
     }));
@@ -240,7 +260,7 @@ function App() {
   };
 
   const updateEditingJobState = (updated) => {
-    const finalJob = { ...updated, lastModified: Date.now() }; // Stamp every edit
+    const finalJob = { ...updated, lastModified: Date.now() };
     setEditingJob(finalJob);
     setJobs(jobs.map(j => j.id === finalJob.id ? finalJob : j));
   };
@@ -356,7 +376,6 @@ function App() {
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                             >
-                              {/* Day 23: Ghosting Badge */}
                               {getDaysSinceUpdate(job.lastModified) >= 7 && job.status !== "Rejected" && (
                                 <div className="stale-badge">👻 {getDaysSinceUpdate(job.lastModified)}d ghosted</div>
                               )}
@@ -372,6 +391,8 @@ function App() {
                                   >
                                     {job.isPriority ? '⭐' : '☆'}
                                   </button>
+                                  {/* NEW: BRAND LOGO */}
+                                  <CompanyLogo company={job.title} />
                                   <strong>{job.title}</strong>
                                 </div>
                                 <button onClick={() => setEditingJob(job)}>📝</button>
@@ -416,6 +437,8 @@ function App() {
                 >
                     {job.isPriority ? '⭐' : '☆'}
                 </button>
+                {/* NEW: BRAND LOGO */}
+                <CompanyLogo company={job.title} />
                 <strong>{job.title}</strong>
                 <span className={`badge ${job.status.toLowerCase()}`}>{job.status}</span>
                 {getDaysSinceUpdate(job.lastModified) >= 7 && job.status !== "Rejected" && (
@@ -435,7 +458,8 @@ function App() {
         <div className="modal-overlay" onClick={() => setEditingJob(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <div className="header-title-group">
+              <div className="header-title-group" style={{display: 'flex', alignItems: 'center'}}>
+                <CompanyLogo company={editingJob.title} size={40} />
                 <h3>Edit: {editingJob.title}</h3>
                 <button 
                   className="research-btn"

@@ -1160,3 +1160,31 @@ body {
   50% { opacity: 0.6; }
   100% { opacity: 1; }
 }
+
+
+.company-logo-img {
+  border-radius: 4px;
+  margin-right: 8px;
+  object-fit: contain;
+  background: white; /* Ensures dark logos are visible on dark themes */
+  padding: 2px;
+}
+
+.logo-fallback {
+  background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  border-radius: 4px;
+  margin-right: 8px;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+/* Modal specific logo spacing */
+.header-title-group .logo-fallback, 
+.header-title-group .company-logo-img {
+  margin-right: 12px;
+}
