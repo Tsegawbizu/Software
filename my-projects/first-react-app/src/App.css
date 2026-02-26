@@ -1023,3 +1023,54 @@ body {
   font-size: 0.75rem;
   color: #3498db;
 }
+
+/* Day 20: Response Time Analytics Styles */
+
+.response-time-badge {
+  background: rgba(155, 89, 182, 0.1); /* Subtle purple tint */
+  color: #9b59b6;
+  border: 1px solid rgba(155, 89, 182, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+/* Hover effect to show it's a dynamic metric */
+.response-time-badge:hover {
+  background: rgba(155, 89, 182, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Dark Mode adjustment for readability */
+.dark-mode .response-time-badge {
+  background: rgba(162, 155, 254, 0.15);
+  color: #a29bfe;
+  border-color: rgba(162, 155, 254, 0.4);
+}
+
+/* Ensure the card-meta container handles the new badge well */
+.card-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.notes-search {
+  border-left: 4px solid #9b59b6 !important; /* Purple accent to match Day 20 */
+  margin-top: 10px;
+}
+
+@media (min-width: 768px) {
+  .controls-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+}

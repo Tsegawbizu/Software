@@ -33,6 +33,10 @@ function App() {
   const [input, setInput] = useState("");
   const [inputDate, setInputDate] = useState(new Date().toISOString().split('T')[0]);
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // Day 21: Global Notes Search State
+  const [noteSearchTerm, setNoteSearchTerm] = useState("");
+  
   const [filterStatus, setFilterStatus] = useState("All");
   const [editingJob, setEditingJob] = useState(null);
 
@@ -67,10 +71,14 @@ function App() {
     return { label: weekOffset === 0 ? "Now" : `${weekOffset}w ago`, count };
   });
 
-  const filteredJobs = jobs.filter(j => 
-    (filterStatus === "All" || j.status === filterStatus) && 
-    j.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Day 21: Updated Filtering Logic to include Notes Search
+  const filteredJobs = jobs.filter(j => {
+    const matchesStatus = filterStatus === "All" || j.status === filterStatus;
+    const matchesTitle = j.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesNotes = j.notes.toLowerCase().includes(noteSearchTerm.toLowerCase());
+    
+    return matchesStatus && matchesTitle && matchesNotes;
+  });
 
   const columns = {
     Applied: filteredJobs.filter(j => j.status === "Applied"),
@@ -100,7 +108,7 @@ function App() {
     }
   }, [jobsThisWeek, weeklyGoal]);
 
-  // --- 4. ACTIONS ---
+  // --- 4. ACTIONS & HELPERS ---
   const onDragEnd = (result) => {
     const { destination, source, draggableId } = result;
     if (!destination) return;
@@ -123,7 +131,6 @@ function App() {
       return;
     }
 
-    // Day 19: Notes Template
     const notesTemplate = `✅ PROS: \n- \n\n❌ CONS: \n- \n\n🏢 CULTURE: \n- `;
 
     const newJob = { 
@@ -178,6 +185,20 @@ function App() {
     return diff > 0 && diff < 86400000; // 24 Hours
   };
 
+  const getDaysSince = (dateString) => {
+    const diff = Math.abs(new Date() - new Date(dateString));
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+  };
+
+  const getResponseTime = (appDate, interviewDate) => {
+    if (!appDate || !interviewDate) return null;
+    const start = new Date(appDate);
+    const end = new Date(interviewDate);
+    const diffTime = end - start;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 ? diffDays : 0; 
+  };
+
   const backupData = () => {
     const blob = new Blob([JSON.stringify(jobs)], { type: 'application/json' });
     const href = URL.createObjectURL(blob);
@@ -198,11 +219,6 @@ function App() {
       } catch(err) { toast.error("Invalid backup file."); }
     };
     reader.readAsText(e.target.files[0]);
-  };
-
-  const getDaysSince = (dateString) => {
-    const diff = Math.abs(new Date() - new Date(dateString));
-    return Math.floor(diff / (1000 * 60 * 60 * 24));
   };
 
   return (
@@ -268,10 +284,17 @@ function App() {
       </div>
 
       <div className="controls-container">
-        <input 
-          className="search-bar" placeholder="🔍 Search applications..." 
-          value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} 
-        />
+        <div className="search-group">
+          <input 
+            className="search-bar" placeholder="🔍 Search company..." 
+            value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} 
+          />
+          {/* Day 21: New Notes Search Input */}
+          <input 
+            className="search-bar notes-search" placeholder="📝 Search inside notes (Python, Remote...)" 
+            value={noteSearchTerm} onChange={(e) => setNoteSearchTerm(e.target.value)} 
+          />
+        </div>
         <div className="status-pills">
           {["All", "Applied", "Interviewing", "Offered", "Rejected"].map(status => (
             <button 
@@ -319,6 +342,13 @@ function App() {
                                 <small className={getDaysSince(job.date) > 7 ? 'text-warn' : ''}>
                                   {getDaysSince(job.date)}d ago
                                 </small>
+                                
+                                {job.interviewDate && (
+                                  <span className="response-time-badge">
+                                    ⚡ {getResponseTime(job.date, job.interviewDate)}d gap
+                                  </span>
+                                )}
+
                                 {job.salary > 0 && <span className="money-pill">${(job.salary/1000).toFixed(0)}k</span>}
                               </div>
                               <div className="card-actions">
@@ -457,7 +487,6 @@ function App() {
               </div>
             </div>
 
-            {/* Day 19: Notes Section with Reset Template */}
             <div className="modal-notes-header">
               <label>📝 Interview & Role Notes</label>
               <button 
