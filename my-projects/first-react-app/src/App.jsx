@@ -33,10 +33,7 @@ function App() {
   const [input, setInput] = useState("");
   const [inputDate, setInputDate] = useState(new Date().toISOString().split('T')[0]);
   const [searchTerm, setSearchTerm] = useState("");
-  
-  // Day 21: Global Notes Search State
   const [noteSearchTerm, setNoteSearchTerm] = useState("");
-  
   const [filterStatus, setFilterStatus] = useState("All");
   const [editingJob, setEditingJob] = useState(null);
 
@@ -63,7 +60,7 @@ function App() {
     const end = new Date();
     end.setDate(end.getDate() - (weekOffset * 7));
     const start = new Date();
-    start.setDate(start.setDate() - ((weekOffset + 1) * 7));
+    start.setDate(start.setHours(0,0,0,0) - ((weekOffset + 1) * 7));
     const count = jobs.filter(job => {
       const d = new Date(job.date);
       return d > start && d <= end;
@@ -71,15 +68,13 @@ function App() {
     return { label: weekOffset === 0 ? "Now" : `${weekOffset}w ago`, count };
   });
 
-  // Day 21 & 22: Updated Filtering Logic + Priority Sorting
   const filteredJobs = jobs
     .filter(j => {
       const matchesStatus = filterStatus === "All" || j.status === filterStatus;
       const matchesTitle = j.title.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesNotes = j.notes.toLowerCase().includes(noteSearchTerm.toLowerCase());
+      const matchesNotes = (j.notes || "").toLowerCase().includes(noteSearchTerm.toLowerCase());
       return matchesStatus && matchesTitle && matchesNotes;
     })
-    // Sort so priority stars appear at the top
     .sort((a, b) => (b.isPriority === a.isPriority ? 0 : b.isPriority ? 1 : -1));
 
   const columns = {
@@ -111,6 +106,14 @@ function App() {
   }, [jobsThisWeek, weeklyGoal]);
 
   // --- 4. ACTIONS & HELPERS ---
+  
+  // Day 23: Calculate "Ghosting" period
+  const getDaysSinceUpdate = (lastModified) => {
+    if (!lastModified) return 0;
+    const diff = Math.abs(new Date() - new Date(lastModified));
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+  };
+
   const onDragEnd = (result) => {
     const { destination, source, draggableId } = result;
     if (!destination) return;
@@ -121,19 +124,18 @@ function App() {
     setJobs(prevJobs => prevJobs.map(job => {
       if (job.id.toString() === draggableId) {
         if (job.status !== newStatus) toast.success(`Moved to ${newStatus}`);
-        return { ...job, status: newStatus };
+        return { ...job, status: newStatus, lastModified: Date.now() }; // Updated lastModified
       }
       return job;
     }));
   };
 
-  // Day 22: Priority Toggle Function
   const togglePriority = (id) => {
     setJobs(jobs.map(job => {
       if (job.id === id) {
         const newState = !job.isPriority;
         if (newState) toast("Dream Job Flagged! ⭐", { icon: '🔥' });
-        return { ...job, isPriority: newState };
+        return { ...job, isPriority: newState, lastModified: Date.now() }; // Updated lastModified
       }
       return job;
     }));
@@ -156,7 +158,8 @@ function App() {
       notes: notesTemplate, 
       interviewDate: "",
       tasks: [],
-      isPriority: false // Day 22: Added property
+      isPriority: false,
+      lastModified: Date.now() // Day 23 initial timestamp
     };
     setJobs([newJob, ...jobs]);
     setInput("");
@@ -170,7 +173,7 @@ function App() {
         const currentIndex = statuses.indexOf(job.status);
         const nextStatus = statuses[(currentIndex + 1) % statuses.length];
         toast(`Moved to ${nextStatus}`, { icon: '🔄' });
-        return { ...job, status: nextStatus };
+        return { ...job, status: nextStatus, lastModified: Date.now() }; // Updated lastModified
       }
       return job;
     }));
@@ -197,7 +200,7 @@ function App() {
   const isInterviewSoon = (dateString) => {
     if (!dateString) return false;
     const diff = new Date(dateString) - new Date();
-    return diff > 0 && diff < 86400000; // 24 Hours
+    return diff > 0 && diff < 86400000;
   };
 
   const getDaysSince = (dateString) => {
@@ -234,6 +237,12 @@ function App() {
       } catch(err) { toast.error("Invalid backup file."); }
     };
     reader.readAsText(e.target.files[0]);
+  };
+
+  const updateEditingJobState = (updated) => {
+    const finalJob = { ...updated, lastModified: Date.now() }; // Stamp every edit
+    setEditingJob(finalJob);
+    setJobs(jobs.map(j => j.id === finalJob.id ? finalJob : j));
   };
 
   return (
@@ -347,10 +356,15 @@ function App() {
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                             >
+                              {/* Day 23: Ghosting Badge */}
+                              {getDaysSinceUpdate(job.lastModified) >= 7 && job.status !== "Rejected" && (
+                                <div className="stale-badge">👻 {getDaysSinceUpdate(job.lastModified)}d ghosted</div>
+                              )}
+
                               {isInterviewSoon(job.interviewDate) && <div className="alert-badge">⏰ INTERVIEW SOON</div>}
+                              
                               <div className="card-header">
                                 <div className="title-wrapper" style={{display: 'flex', alignItems: 'center'}}>
-                                  {/* Day 22: Priority Toggle Button */}
                                   <button 
                                     className={`priority-btn ${job.isPriority ? 'active' : ''}`}
                                     onClick={(e) => { e.stopPropagation(); togglePriority(job.id); }}
@@ -404,6 +418,9 @@ function App() {
                 </button>
                 <strong>{job.title}</strong>
                 <span className={`badge ${job.status.toLowerCase()}`}>{job.status}</span>
+                {getDaysSinceUpdate(job.lastModified) >= 7 && job.status !== "Rejected" && (
+                   <span className="stale-badge" style={{marginLeft: '10px'}}>👻 {getDaysSinceUpdate(job.lastModified)}d</span>
+                )}
               </div>
               <div className="actions">
                 <button onClick={() => setEditingJob(job)}>📝</button>
@@ -435,20 +452,14 @@ function App() {
                 <label>💰 Salary Expectation</label>
                 <input 
                   type="number" value={editingJob.salary || ""}
-                  onChange={(e) => {
-                      const updated = {...editingJob, salary: Number(e.target.value)};
-                      setEditingJob(updated);
-                      setJobs(jobs.map(j => j.id === editingJob.id ? updated : j));
-                  }}
+                  onChange={(e) => updateEditingJobState({...editingJob, salary: Number(e.target.value)})}
                   className="modal-input"
                 />
 
                 {editingJob.salary > 0 && (
                   <div className="salary-meter-container">
                     <div className="meter-labels">
-                      <span>Jr</span>
-                      <span>Mid</span>
-                      <span>Sr</span>
+                      <span>Jr</span><span>Mid</span><span>Sr</span>
                     </div>
                     <div className="meter-bar">
                       <div 
@@ -465,11 +476,7 @@ function App() {
                 <label style={{marginTop: '15px', display: 'block'}}>📅 Interview Date</label>
                 <input 
                   type="date" value={editingJob.interviewDate || ""}
-                  onChange={(e) => {
-                      const updated = {...editingJob, interviewDate: e.target.value};
-                      setEditingJob(updated);
-                      setJobs(jobs.map(j => j.id === editingJob.id ? updated : j));
-                  }}
+                  onChange={(e) => updateEditingJobState({...editingJob, interviewDate: e.target.value})}
                   className="modal-input"
                 />
               </div>
@@ -486,8 +493,7 @@ function App() {
                         ...editingJob, 
                         tasks: [...(editingJob.tasks || []), { id: Date.now(), text: e.target.value, completed: false }]
                       };
-                      setEditingJob(updated);
-                      setJobs(jobs.map(j => j.id === editingJob.id ? updated : j));
+                      updateEditingJobState(updated);
                       e.target.value = "";
                     }
                   }}
@@ -502,9 +508,7 @@ function App() {
                           const updatedTasks = editingJob.tasks.map(t => 
                             t.id === task.id ? { ...t, completed: !t.completed } : t
                           );
-                          const updated = { ...editingJob, tasks: updatedTasks };
-                          setEditingJob(updated);
-                          setJobs(jobs.map(j => j.id === editingJob.id ? updated : j));
+                          updateEditingJobState({ ...editingJob, tasks: updatedTasks });
                         }}
                       />
                       <span>{task.text}</span>
@@ -521,9 +525,7 @@ function App() {
                 onClick={() => {
                   if(window.confirm("Reset notes to template?")) {
                     const template = `✅ PROS: \n- \n\n❌ CONS: \n- \n\n🏢 CULTURE: \n- `;
-                    const updated = {...editingJob, notes: template};
-                    setEditingJob(updated);
-                    setJobs(jobs.map(j => j.id === editingJob.id ? updated : j));
+                    updateEditingJobState({...editingJob, notes: template});
                   }
                 }}
               >
@@ -533,11 +535,7 @@ function App() {
             <textarea 
               value={editingJob.notes} 
               className="modal-notes"
-              onChange={(e) => {
-                const updated = {...editingJob, notes: e.target.value};
-                setEditingJob(updated);
-                setJobs(jobs.map(j => j.id === editingJob.id ? updated : j));
-              }}
+              onChange={(e) => updateEditingJobState({...editingJob, notes: e.target.value})}
             />
             <button onClick={() => setEditingJob(null)} className="save-btn">Save & Close</button>
           </div>
