@@ -9,11 +9,6 @@ import './App.css';
 // --- HELPERS ---
 const TECH_KEYWORDS = ["React", "Vite", "Tailwind", "JavaScript", "TypeScript", "Node.js", "CSS", "HTML", "Git", "API", "Firebase"];
 
-const findMatches = (text) => {
-  if (!text) return [];
-  return TECH_KEYWORDS.filter(skill => text.toLowerCase().includes(skill.toLowerCase()));
-};
-
 const parseTags = (input) => {
   return input.split(',').map(tag => tag.trim()).filter(tag => tag !== "");
 };
@@ -78,7 +73,6 @@ const JobCard = React.memo(({ job, index, setEditingJob, searchTerm }) => {
           <div className="card-header">
             <CompanyLogo company={job.title} />
             <div style={{ flex: 1 }}>
-              {/* Day 43: Highlighted Title */}
               <strong>{highlightText(job.title, searchTerm)}</strong>
               <div className="card-tags-mini">
                 {(job.tags || []).slice(0, 2).map(tag => (
@@ -100,35 +94,59 @@ function App() {
     const savedJobs = localStorage.getItem("tsegaw-jobs");
     return savedJobs ? JSON.parse(savedJobs) : [];
   });
+  
+  const [columnOrder, setColumnOrder] = useState(() => {
+    const savedCols = localStorage.getItem("tsegaw-columns");
+    return savedCols ? JSON.parse(savedCols) : ["Applied", "Interviewing", "Offered", "Rejected"];
+  });
+
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
   const [weeklyGoal, setWeeklyGoal] = useState(() => parseInt(localStorage.getItem("tsegaw-goal")) || 5);
   const [viewMode, setViewMode] = useState("board"); 
   const [input, setInput] = useState("");
   const [inputDate, setInputDate] = useState(new Date().toISOString().split('T')[0]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("All");
   const [editingJob, setEditingJob] = useState(null);
   const [selectedTags, setSelectedTags] = useState([]);
 
-  // --- DAY 41: REPORT GENERATION ---
-  const generateReport = async () => {
-    const element = document.querySelector(".report-area");
-    if (!element) return;
-    try {
-      const canvas = await html2canvas(element, {
-        backgroundColor: isDarkMode ? "#1a1a1a" : "#ffffff",
-        scale: 2,
-      });
-      const link = document.createElement("a");
-      link.href = canvas.toDataURL("image/png");
-      link.download = `Career-Report-${new Date().toISOString().split('T')[0]}.png`;
-      link.click();
-      toast.success("Success Report Generated! 🚀");
-      confetti();
-    } catch (err) {
-      toast.error("Failed to generate report.");
-    }
-  };
+  // --- DAY 45: KEYBOARD SHORTCUTS ---
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const isTyping = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+
+      if (e.key === 'n' && !isTyping) {
+        e.preventDefault();
+        document.querySelector('.add-job-input')?.focus();
+        toast("Focusing New Job...", { icon: '⌨️' });
+      }
+
+      if (e.key === '/' && !isTyping) {
+        e.preventDefault();
+        document.querySelector('.search-input')?.focus();
+        toast("Focusing Search...", { icon: '🔍' });
+      }
+
+      if (e.key === 'Escape') {
+        setSearchTerm("");
+        setEditingJob(null);
+      }
+
+      if (e.key === 't' && !isTyping) {
+        setIsDarkMode(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // --- PERSISTENCE ---
+  useEffect(() => localStorage.setItem("tsegaw-jobs", JSON.stringify(jobs)), [jobs]);
+  useEffect(() => localStorage.setItem("tsegaw-columns", JSON.stringify(columnOrder)), [columnOrder]);
+  useEffect(() => {
+    document.body.classList.toggle('dark-mode', isDarkMode);
+    localStorage.setItem("theme", isDarkMode ? "dark" : "light");
+  }, [isDarkMode]);
 
   // --- CALCULATIONS ---
   const totalJobs = jobs.length;
@@ -175,30 +193,41 @@ function App() {
 
   const filteredJobs = useMemo(() => {
     return jobs.filter(j => {
-      const matchesStatus = filterStatus === "All" || j.status === filterStatus;
       const matchesTitle = j.title.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesTags = selectedTags.length === 0 || 
         selectedTags.every(tag => (j.tags || []).includes(tag));
-
-      return matchesStatus && matchesTitle && matchesTags;
+      return matchesTitle && matchesTags;
     });
-  }, [jobs, filterStatus, searchTerm, selectedTags]);
+  }, [jobs, searchTerm, selectedTags]);
 
-  const columns = useMemo(() => ({
-    Applied: filteredJobs.filter(j => j.status === "Applied"),
-    Interviewing: filteredJobs.filter(j => j.status === "Interviewing"),
-    Offered: filteredJobs.filter(j => j.status === "Offered"),
-    Rejected: filteredJobs.filter(j => j.status === "Rejected")
-  }), [filteredJobs]);
-
-  // --- EFFECTS ---
-  useEffect(() => localStorage.setItem("tsegaw-jobs", JSON.stringify(jobs)), [jobs]);
-  useEffect(() => {
-    document.body.classList.toggle('dark-mode', isDarkMode);
-    localStorage.setItem("theme", isDarkMode ? "dark" : "light");
-  }, [isDarkMode]);
+  const columns = useMemo(() => {
+    const cols = {};
+    columnOrder.forEach(status => {
+      cols[status] = filteredJobs.filter(j => j.status === status);
+    });
+    return cols;
+  }, [filteredJobs, columnOrder]);
 
   // --- ACTIONS ---
+  const generateReport = async () => {
+    const element = document.querySelector(".report-area");
+    if (!element) return;
+    try {
+      const canvas = await html2canvas(element, {
+        backgroundColor: isDarkMode ? "#1a1a1a" : "#ffffff",
+        scale: 2,
+      });
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = `Career-Report-${new Date().toISOString().split('T')[0]}.png`;
+      link.click();
+      toast.success("Success Report Generated! 🚀");
+      confetti();
+    } catch (err) {
+      toast.error("Failed to generate report.");
+    }
+  };
+
   const onDragEnd = (result) => {
     const { destination, draggableId } = result;
     if (!destination) return;
@@ -275,14 +304,29 @@ function App() {
         </div>
       )}
 
+      <div className="card column-manager">
+        <input 
+          type="text" 
+          placeholder="+ Add custom board status (e.g. Technical Test)..." 
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && e.target.value.trim()) {
+              if (columnOrder.includes(e.target.value.trim())) return toast.error("Column already exists!");
+              setColumnOrder([...columnOrder, e.target.value.trim()]);
+              e.target.value = "";
+              toast.success("New column added!");
+            }
+          }}
+        />
+      </div>
+
       <div className="card add-job-box">
         <input 
           type="text" 
+          className="add-job-input"
           value={input} 
           onChange={(e) => setInput(e.target.value)} 
           placeholder="New company..." 
         />
-        {/* Day 43 Search Input integrated with title filtering */}
         <input 
           type="text" 
           value={searchTerm} 
@@ -293,7 +337,7 @@ function App() {
         <input type="date" value={inputDate} onChange={(e) => setInputDate(e.target.value)} />
         <button onClick={() => {
            if (!input.trim()) return toast.error("Enter a company!");
-           setJobs([{ id: Date.now(), title: input, status: "Applied", date: inputDate, tags: [], history: [], lastModified: Date.now() }, ...jobs]);
+           setJobs([{ id: Date.now(), title: input, status: columnOrder[0], date: inputDate, tags: [], history: [], lastModified: Date.now() }, ...jobs]);
            setInput("");
         }}>Add Job</button>
       </div>
@@ -305,7 +349,13 @@ function App() {
               <Droppable droppableId={status} key={status}>
                 {(provided) => (
                   <div className="kanban-column" {...provided.droppableProps} ref={provided.innerRef}>
-                    <h3 className="column-title">{status} <span>{columnJobs.length}</span></h3>
+                    <div className="column-header-row">
+                      <h3 className="column-title">{status} <span>{columnJobs.length}</span></h3>
+                      <button className="del-col-btn" onClick={() => {
+                        if (columnJobs.length > 0) return toast.error("Cannot delete non-empty column!");
+                        setColumnOrder(columnOrder.filter(c => c !== status));
+                      }}>×</button>
+                    </div>
                     <div className="column-content">
                       {columnJobs.map((job, index) => (
                         <JobCard 
@@ -329,7 +379,6 @@ function App() {
           {filteredJobs.map(job => (
             <div key={job.id} className="job-item card">
               <CompanyLogo company={job.title} />
-              {/* Day 43 Highlight in List View */}
               <strong>{highlightText(job.title, searchTerm)}</strong>
               <button onClick={() => setEditingJob(job)}>📝</button>
             </div>
@@ -341,42 +390,31 @@ function App() {
         <div className="modal-overlay" onClick={() => setEditingJob(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>Edit {editingJob.title}</h3>
-            
-            <label>🏷️ Tags (comma separated)</label>
+            <label>🏷️ Tags</label>
             <input 
               type="text" 
               value={(editingJob.tags || []).join(', ')} 
               className="modal-input"
               onChange={(e) => updateEditingJobState({...editingJob, tags: parseTags(e.target.value)})}
             />
-
             <label>📄 Job Description</label>
             <textarea 
               value={editingJob.description || ""} 
               className="modal-notes"
               onChange={(e) => updateEditingJobState({...editingJob, description: e.target.value})}
             />
-
-            <div className="timeline-section">
-              <h4>🛤️ Application Journey</h4>
-              <div className="vertical-timeline">
-                <div className="timeline-item">
-                  <span className="timeline-date">{new Date(editingJob.date).toLocaleDateString()}</span>
-                  <span className="timeline-status">Applied</span>
-                </div>
-                {(editingJob.history || []).map((event, i) => (
-                  <div key={i} className="timeline-item">
-                    <span className="timeline-date">{new Date(event.date).toLocaleDateString()}</span>
-                    <span className="timeline-status">{event.status}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             <button onClick={() => setEditingJob(null)} className="save-btn">Save</button>
           </div>
         </div>
       )}
+
+      {/* Day 45: Shortcut Legend */}
+      <footer className="shortcut-legend">
+        <span>⌨️ <strong>N</strong>: New Job</span>
+        <span>🔍 <strong>/</strong>: Search</span>
+        <span>🌓 <strong>T</strong>: Toggle Theme</span>
+        <span>❌ <strong>Esc</strong>: Clear/Close</span>
+      </footer>
     </div>
   );
 }

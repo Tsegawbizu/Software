@@ -710,3 +710,62 @@ body {
   padding: 2px 6px;
   border-radius: 4px;
 }
+
+/* Day 44: Flexible Kanban Layout */
+.kanban-board {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto; /* Allows horizontal scrolling for many columns */
+  padding-bottom: 20px;
+  align-items: flex-start;
+}
+
+.kanban-column {
+  min-width: 280px; /* Ensures columns don't squash */
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.column-manager {
+  margin-bottom: 15px;
+  border: 1px dashed #3498db;
+}
+
+.column-manager input {
+  width: 100%;
+  padding: 8px;
+  background: transparent;
+  border: 1px solid rgba(52, 152, 219, 0.3);
+  color: inherit;
+  border-radius: 4px;
+}
+
+/* Day 45: Keyboard Shortcut Legend */
+.shortcut-legend {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 5px;
+  font-size: 11px;
+  opacity: 0.6;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
+  pointer-events: none; /* Don't block clicks */
+}
+
+.dark-mode .shortcut-legend {
+  background: rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Visual feedback for focused inputs */
+input:focus {
+  outline: 2px solid #3498db;
+  outline-offset: 2px;
+}
