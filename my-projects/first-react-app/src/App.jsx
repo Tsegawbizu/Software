@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Stats from './components/Stats';
 import confetti from 'canvas-confetti';
 import html2canvas from 'html2canvas';
@@ -6,7 +6,15 @@ import { Toaster, toast } from 'react-hot-toast';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import './App.css';
 
-// --- COMPONENT: Brand Intelligence (Preserved) ---
+// --- DAY 37: KEYWORD LIST ---
+const TECH_KEYWORDS = ["React", "Vite", "Tailwind", "JavaScript", "TypeScript", "Node.js", "CSS", "HTML", "Git", "API", "Firebase"];
+
+const findMatches = (text) => {
+  if (!text) return [];
+  return TECH_KEYWORDS.filter(skill => text.toLowerCase().includes(skill.toLowerCase()));
+};
+
+// --- COMPONENT: Brand Intelligence ---
 const CompanyLogo = ({ company, size = 30 }) => {
   const [error, setError] = useState(false);
   const domain = company.toLowerCase().trim().replace(/\s+/g, '') + ".com";
@@ -35,12 +43,6 @@ const CompanyLogo = ({ company, size = 30 }) => {
   );
 };
 
-const SALARY_BENCHMARKS = {
-  junior: 60000,
-  mid: 95000,
-  senior: 140000
-};
-
 function App() {
   // --- 1. STATE & STORAGE ---
   const [jobs, setJobs] = useState(() => {
@@ -48,15 +50,8 @@ function App() {
     return savedJobs ? JSON.parse(savedJobs) : [];
   });
 
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem("theme") === "dark";
-  });
-
-  const [weeklyGoal, setWeeklyGoal] = useState(() => {
-    const savedGoal = localStorage.getItem("tsegaw-goal");
-    return savedGoal ? parseInt(savedGoal) : 5;
-  });
-
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
+  const [weeklyGoal, setWeeklyGoal] = useState(() => parseInt(localStorage.getItem("tsegaw-goal")) || 5);
   const [viewMode, setViewMode] = useState("board"); 
   const [input, setInput] = useState("");
   const [inputDate, setInputDate] = useState(new Date().toISOString().split('T')[0]);
@@ -71,9 +66,7 @@ function App() {
   const offersCount = jobs.filter(j => j.status === "Offered").length;
   const successRate = totalJobs > 0 ? Math.round(((interviewingCount + offersCount) / totalJobs) * 100) : 0;
 
-  const pipelineValue = jobs
-    .filter(j => j.status !== "Rejected")
-    .reduce((sum, job) => sum + (Number(job.salary) || 0), 0);
+  const pipelineValue = jobs.filter(j => j.status !== "Rejected").reduce((sum, job) => sum + (Number(job.salary) || 0), 0);
 
   const jobsThisWeek = jobs.filter(job => {
     const jobDate = new Date(job.date);
@@ -84,19 +77,28 @@ function App() {
 
   const goalProgress = Math.min(Math.round((jobsThisWeek / weeklyGoal) * 100), 100);
 
-  // --- UPGRADED FILTER LOGIC (Day 34 - Advanced Search) ---
-  const filteredJobs = jobs
-    .filter(j => {
-      const matchesStatus = filterStatus === "All" || j.status === filterStatus;
-      const searchLower = searchTerm.toLowerCase();
-      const noteSearchLower = noteSearchTerm.toLowerCase();
-      
-      const matchesTitle = j.title.toLowerCase().includes(searchLower);
-      const matchesNotes = (j.notes || "").toLowerCase().includes(noteSearchLower);
-      
-      return matchesStatus && matchesTitle && matchesNotes;
-    })
-    .sort((a, b) => (b.isPriority === a.isPriority ? 0 : b.isPriority ? -1 : 1));
+  // --- DAY 36: ANALYTICS LOGIC (Optimized) ---
+  const activityData = useMemo(() => {
+    const last7Days = [...Array(7)].map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      return d.toISOString().split('T')[0];
+    }).reverse();
+
+    return last7Days.map(dateString => ({
+      date: new Date(dateString + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
+      count: jobs.filter(j => j.date === dateString).length
+    }));
+  }, [jobs]);
+
+  const maxActivity = Math.max(...activityData.map(d => d.count), 1);
+
+  const filteredJobs = jobs.filter(j => {
+    const matchesStatus = filterStatus === "All" || j.status === filterStatus;
+    const matchesTitle = j.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesNotes = (j.notes || "").toLowerCase().includes(noteSearchTerm.toLowerCase());
+    return matchesStatus && matchesTitle && matchesNotes;
+  }).sort((a, b) => (b.isPriority === a.isPriority ? 0 : b.isPriority ? -1 : 1));
 
   const columns = {
     Applied: filteredJobs.filter(j => j.status === "Applied"),
@@ -106,98 +108,49 @@ function App() {
   };
 
   // --- 3. EFFECTS ---
-  useEffect(() => {
-    localStorage.setItem("tsegaw-jobs", JSON.stringify(jobs));
-  }, [jobs]);
-
+  useEffect(() => localStorage.setItem("tsegaw-jobs", JSON.stringify(jobs)), [jobs]);
   useEffect(() => {
     document.body.classList.toggle('dark-mode', isDarkMode);
     localStorage.setItem("theme", isDarkMode ? "dark" : "light");
   }, [isDarkMode]);
 
-  useEffect(() => {
-    if (jobsThisWeek >= weeklyGoal && jobsThisWeek > 0) {
-      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-      toast.success("Weekly Goal Reached! 🏆");
-    }
-  }, [jobsThisWeek, weeklyGoal]);
-
-  // --- 4. ACTIONS & HELPERS ---
-  
-  // Day 35: Export JSON
+  // --- 4. ACTIONS ---
   const exportData = () => {
-    const dataStr = JSON.stringify(jobs, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const dataBlob = new Blob([JSON.stringify(jobs, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
-    
     const link = document.createElement('a');
     link.href = url;
-    link.download = `career-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
+    link.download = `backup-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
-    document.body.removeChild(link);
-    toast.success("Backup downloaded! 💾");
+    toast.success("Backup downloaded!");
   };
 
-  // Day 35: Import JSON
   const importData = (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const importedJobs = JSON.parse(e.target.result);
-        if (Array.isArray(importedJobs)) {
-          setJobs(importedJobs);
-          toast.success("Data imported successfully! 🚀");
-        } else {
-          toast.error("Invalid file format.");
-        }
-      } catch (err) {
-        toast.error("Error reading file.");
-      }
+        const imported = JSON.parse(e.target.result);
+        if (Array.isArray(imported)) { setJobs(imported); toast.success("Imported!"); }
+      } catch (err) { toast.error("Error reading file."); }
     };
     reader.readAsText(file);
   };
 
-  const getDaysSinceUpdate = (lastModified) => {
-    if (!lastModified) return 0;
-    const diff = Math.abs(Date.now() - lastModified);
-    return Math.floor(diff / (1000 * 60 * 60 * 24));
-  };
-
-  const isInterviewSoon = (dateString) => {
-    if (!dateString) return false;
-    const diff = new Date(dateString) - new Date();
-    return diff > 0 && diff < 86400000; // Less than 24 hours
-  };
-
   const onDragEnd = (result) => {
-    const { destination, source, draggableId } = result;
+    const { destination, draggableId } = result;
     if (!destination) return;
-    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
-
-    setJobs(prevJobs => prevJobs.map(job => {
-      if (job.id.toString() === draggableId) {
-        if (job.status !== destination.droppableId) toast.success(`Moved to ${destination.droppableId}`);
-        return { ...job, status: destination.droppableId, lastModified: Date.now() }; 
-      }
-      return job;
-    }));
+    setJobs(prev => prev.map(job => 
+      job.id.toString() === draggableId ? { ...job, status: destination.droppableId, lastModified: Date.now() } : job
+    ));
   };
 
   const addJob = () => {
-    if (!input.trim()) return toast.error("Enter a company name!");
-    const newJob = { 
-      id: Date.now(), title: input, status: "Applied",
-      date: inputDate, salary: 0, notes: "✅ PROS: \n- \n\n❌ CONS: \n- ", 
-      tasks: [], isPriority: false, lastModified: Date.now(),
-      interviewDate: "" 
-    };
+    if (!input.trim()) return toast.error("Enter a company!");
+    const newJob = { id: Date.now(), title: input, status: "Applied", date: inputDate, salary: 0, notes: "", description: "", lastModified: Date.now() };
     setJobs([newJob, ...jobs]);
     setInput("");
-    toast.success(`Added ${input}! 🚀`);
   };
 
   const updateEditingJobState = (updated) => {
@@ -209,44 +162,37 @@ function App() {
   return (
     <div className="App">
       <Toaster position="bottom-right" />
-
       <header className="header-nav">
         <h1>💼 Career Tracker</h1>
         <div className="header-right">
-          {/* Day 35 Controls */}
-          <button className="pill" onClick={exportData} title="Export Data">📤 Export</button>
-          <label className="pill" style={{ cursor: 'pointer' }} title="Import Data">
-            📥 Import
+          <button className="pill" onClick={exportData}>📤 Export</button>
+          <label className="pill" style={{ cursor: 'pointer' }}>📥 Import
             <input type="file" accept=".json" onChange={importData} style={{ display: 'none' }} />
           </label>
-          <hr style={{width: '1px', height: '20px', margin: '0 10px', opacity: 0.3}} />
-          
-          <button className="pill" onClick={() => setViewMode(viewMode === "board" ? "list" : "board")}>
-            {viewMode === "board" ? "📑 List" : "📋 Board"}
-          </button>
-          <div className="pipeline-mini">💰 ${pipelineValue.toLocaleString()}</div>
-          <button className="pill" onClick={() => setIsDarkMode(!isDarkMode)}>
-            {isDarkMode ? '🌙' : '☀️'}
-          </button>
+          <button className="pill" onClick={() => setViewMode(viewMode === "board" ? "list" : "board")}>{viewMode === "board" ? "📑 List" : "📋 Board"}</button>
+          <button className="pill" onClick={() => setIsDarkMode(!isDarkMode)}>{isDarkMode ? '🌙' : '☀️'}</button>
         </div>
       </header>
 
-      <Stats 
-        totalJobs={totalJobs} interviewingCount={interviewingCount} 
-        offersCount={offersCount} successRate={successRate} 
-        jobsThisWeek={jobsThisWeek} weeklyGoal={weeklyGoal}
-        setWeeklyGoal={setWeeklyGoal} goalProgress={goalProgress}
-      />
+      <Stats totalJobs={totalJobs} interviewingCount={interviewingCount} offersCount={offersCount} successRate={successRate} jobsThisWeek={jobsThisWeek} weeklyGoal={weeklyGoal} goalProgress={goalProgress} />
 
-      <div className="card add-job-box">
-        <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Company Name..." />
-        <input type="date" value={inputDate} onChange={(e) => setInputDate(e.target.value)} />
-        <button onClick={addJob}>Add Job</button>
+      {/* DAY 36: VELOCITY CHART */}
+      <div className="card velocity-chart">
+        <h3>📈 Weekly Velocity</h3>
+        <div className="chart-container">
+          {activityData.map((day, i) => (
+            <div key={i} className="chart-column">
+              <div className="chart-bar" style={{ height: `${(day.count / maxActivity) * 80}px`, backgroundColor: day.count > 0 ? '#3498db' : '#eee' }}></div>
+              <span className="day-name">{day.date}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="controls-container">
-        <input className="search-bar" placeholder="🔍 Search company..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-        <input className="search-bar notes-search" placeholder="📝 Search in notes..." value={noteSearchTerm} onChange={(e) => setNoteSearchTerm(e.target.value)} />
+      <div className="card add-job-box">
+        <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Company..." />
+        <input type="date" value={inputDate} onChange={(e) => setInputDate(e.target.value)} />
+        <button onClick={addJob}>Add Job</button>
       </div>
 
       {viewMode === "board" ? (
@@ -261,13 +207,7 @@ function App() {
                       {columnJobs.map((job, index) => (
                         <Draggable key={job.id} draggableId={job.id.toString()} index={index}>
                           {(provided) => (
-                            <div 
-                              className={`job-card-mini ${job.isPriority ? 'priority-border' : ''} ${isInterviewSoon(job.interviewDate) ? 'interview-alert' : ''}`}
-                              ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
-                            >
-                              {getDaysSinceUpdate(job.lastModified) >= 7 && job.status !== "Rejected" && (
-                                <div className="stale-badge">👻 {getDaysSinceUpdate(job.lastModified)}d idle</div>
-                              )}
+                            <div className="job-card-mini" ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
                               <div className="card-header">
                                 <CompanyLogo company={job.title} />
                                 <strong>{job.title}</strong>
@@ -288,10 +228,9 @@ function App() {
       ) : (
         <div className="job-list">
           {filteredJobs.map(job => (
-            <div key={job.id} className={`job-item card ${job.isPriority ? 'priority-border' : ''}`}>
+            <div key={job.id} className="job-item card">
               <CompanyLogo company={job.title} />
               <strong>{job.title}</strong>
-              <span className={`badge ${job.status.toLowerCase()}`}>{job.status}</span>
               <button onClick={() => setEditingJob(job)}>📝</button>
             </div>
           ))}
@@ -301,40 +240,29 @@ function App() {
       {editingJob && (
         <div className="modal-overlay" onClick={() => setEditingJob(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-               <h3>Edit {editingJob.title}</h3>
-               <button className="close-x" onClick={() => setEditingJob(null)}>×</button>
-            </div>
+            <h3>Edit {editingJob.title}</h3>
             
-            <label>Salary Expectation</label>
-            <input 
-              type="number" value={editingJob.salary || ""} 
-              onChange={(e) => updateEditingJobState({...editingJob, salary: Number(e.target.value)})}
-              className="modal-input"
-            />
-            
-            {editingJob.salary > 0 && (
-              <div className="salary-meter-container">
-                <div className="meter-bar">
-                  <div className="meter-pointer" style={{ left: `${Math.min((editingJob.salary / 150000) * 100, 100)}%`, backgroundColor: '#2ecc71' }}></div>
-                </div>
-              </div>
-            )}
-
-            <label style={{marginTop: '15px', display: 'block'}}>📅 Interview Date</label>
-            <input 
-              type="date" value={editingJob.interviewDate || ""}
-              onChange={(e) => updateEditingJobState({...editingJob, interviewDate: e.target.value})}
-              className="modal-input"
-            />
-
-            <label style={{marginTop: '15px', display: 'block'}}>📝 Notes</label>
+            <label>📄 Job Description</label>
             <textarea 
-              value={editingJob.notes} 
+              placeholder="Paste description..." 
+              value={editingJob.description || ""} 
               className="modal-notes"
-              onChange={(e) => updateEditingJobState({...editingJob, notes: e.target.value})}
+              onChange={(e) => updateEditingJobState({...editingJob, description: e.target.value})}
             />
-            <button onClick={() => setEditingJob(null)} className="save-btn">Save & Close</button>
+
+            {/* DAY 37: KEYWORD MATCHES */}
+            <div className="keyword-matches">
+              <h4>🎯 Skill Match:</h4>
+              <div className="badge-container">
+                {findMatches(editingJob.description).map(skill => (
+                  <span key={skill} className="skill-badge">{skill}</span>
+                ))}
+              </div>
+            </div>
+
+            <label>📝 Notes</label>
+            <textarea value={editingJob.notes} className="modal-notes" onChange={(e) => updateEditingJobState({...editingJob, notes: e.target.value})} />
+            <button onClick={() => setEditingJob(null)} className="save-btn">Save</button>
           </div>
         </div>
       )}

@@ -78,5 +78,26 @@ export default function Stats({
         </p>
       </div>
     </div>
+    
   );
 }
+<div className="card velocity-chart">
+  <h3>📈 Application Velocity (Last 7 Days)</h3>
+  <div className="chart-container">
+    {activityData.map((day, index) => (
+      <div key={index} className="chart-column">
+        <div 
+          className="chart-bar" 
+          style={{ 
+            height: `${(day.count / maxActivity) * 80}px`,
+            backgroundColor: day.count > 0 ? '#3498db' : '#ecf0f1'
+          }}
+          title={`${day.count} applications`}
+        >
+          {day.count > 0 && <span className="bar-label">{day.count}</span>}
+        </div>
+        <span className="day-name">{day.date}</span>
+      </div>
+    ))}
+  </div>
+</div>

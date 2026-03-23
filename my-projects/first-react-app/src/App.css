@@ -520,3 +520,49 @@ body {
   background: var(--primary);
   color: white;
 }
+
+.velocity-chart {
+  margin: 20px 0;
+  padding: 15px;
+  text-align: center;
+}
+
+.chart-container {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  height: 120px;
+  margin-top: 10px;
+}
+
+.chart-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.chart-bar {
+  width: 30px;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s ease;
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.bar-label {
+  position: absolute;
+  top: -20px;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.day-name {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+.chart-bar {
+  transition: height 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
