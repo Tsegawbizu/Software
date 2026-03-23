@@ -566,3 +566,27 @@ body {
 .chart-bar {
   transition: height 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+
+.job-tag {
+  background: #f1c40f; /* Yellow/Gold for tags */
+  color: #2c3e50;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  margin-right: 5px;
+  display: inline-block;
+  margin-top: 5px;
+}
+
+.tag-display-area {
+  margin-bottom: 15px;
+}
+
+/* Add tags to the small cards on the board too */
+.card-tags-mini {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 5px;
+}

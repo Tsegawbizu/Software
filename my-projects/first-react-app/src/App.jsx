@@ -5,12 +5,17 @@ import { Toaster, toast } from 'react-hot-toast';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import './App.css';
 
-// --- DAY 37: KEYWORD LIST ---
+// --- DAY 37 & 39: HELPERS ---
 const TECH_KEYWORDS = ["React", "Vite", "Tailwind", "JavaScript", "TypeScript", "Node.js", "CSS", "HTML", "Git", "API", "Firebase"];
 
 const findMatches = (text) => {
   if (!text) return [];
   return TECH_KEYWORDS.filter(skill => text.toLowerCase().includes(skill.toLowerCase()));
+};
+
+// Day 39 Tag Parsing
+const parseTags = (input) => {
+  return input.split(',').map(tag => tag.trim()).filter(tag => tag !== "");
 };
 
 // --- DAY 38: OPTIMIZED JOB CARD COMPONENT ---
@@ -26,7 +31,16 @@ const JobCard = React.memo(({ job, index, setEditingJob }) => {
         >
           <div className="card-header">
             <CompanyLogo company={job.title} />
-            <strong>{job.title}</strong>
+            <div style={{ flex: 1 }}>
+              <strong>{job.title}</strong>
+              {/* Day 39: Tags on Board */}
+              <div className="card-tags-mini">
+                {(job.tags || []).slice(0, 2).map(tag => (
+                  <span key={tag} className="job-tag">#{tag}</span>
+                ))}
+                {job.tags?.length > 2 && <span style={{fontSize: '9px', opacity: 0.6}}>+{job.tags.length - 2}</span>}
+              </div>
+            </div>
             <button onClick={() => setEditingJob(job)}>📝</button>
           </div>
         </div>
@@ -99,7 +113,6 @@ function App() {
 
   const goalProgress = Math.min(Math.round((jobsThisWeek / weeklyGoal) * 100), 100);
 
-  // --- DAY 36: ANALYTICS LOGIC (Optimized) ---
   const activityData = useMemo(() => {
     const last7Days = [...Array(7)].map((_, i) => {
       const d = new Date();
@@ -185,7 +198,17 @@ function App() {
         <input type="date" value={inputDate} onChange={(e) => setInputDate(e.target.value)} />
         <button onClick={() => {
            if (!input.trim()) return toast.error("Enter a company!");
-           setJobs([{ id: Date.now(), title: input, status: "Applied", date: inputDate, salary: 0, notes: "", description: "", lastModified: Date.now() }, ...jobs]);
+           setJobs([{ 
+             id: Date.now(), 
+             title: input, 
+             status: "Applied", 
+             date: inputDate, 
+             salary: 0, 
+             notes: "", 
+             description: "", 
+             tags: [], // Initialize tags array
+             lastModified: Date.now() 
+           }, ...jobs]);
            setInput("");
         }}>Add Job</button>
       </div>
@@ -231,12 +254,24 @@ function App() {
         <div className="modal-overlay" onClick={() => setEditingJob(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>Edit {editingJob.title}</h3>
-            <label>📄 Job Description</label>
+            
+            {/* Day 39: Tag Input */}
+            <label style={{marginTop: '15px', display: 'block'}}>🏷️ Tags (comma separated)</label>
+            <input 
+              type="text" 
+              placeholder="e.g. Remote, High Salary, Frontend"
+              value={(editingJob.tags || []).join(', ')} 
+              className="modal-input"
+              onChange={(e) => updateEditingJobState({...editingJob, tags: parseTags(e.target.value)})}
+            />
+
+            <label style={{marginTop: '15px', display: 'block'}}>📄 Job Description</label>
             <textarea 
               value={editingJob.description || ""} 
               className="modal-notes"
               onChange={(e) => updateEditingJobState({...editingJob, description: e.target.value})}
             />
+
             <div className="keyword-matches">
               <h4>🎯 Skill Match:</h4>
               <div className="badge-container">
@@ -245,6 +280,7 @@ function App() {
                 ))}
               </div>
             </div>
+
             <button onClick={() => setEditingJob(null)} className="save-btn">Save</button>
           </div>
         </div>
