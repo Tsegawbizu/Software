@@ -3,7 +3,7 @@ import Stats from './components/Stats';
 import confetti from 'canvas-confetti';
 import { Toaster, toast } from 'react-hot-toast'; 
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import html2canvas from 'html2canvas'; // Day 41: For report generation
+import html2canvas from 'html2canvas'; 
 import './App.css';
 
 // --- HELPERS ---
@@ -16,6 +16,23 @@ const findMatches = (text) => {
 
 const parseTags = (input) => {
   return input.split(',').map(tag => tag.trim()).filter(tag => tag !== "");
+};
+
+// --- DAY 43: HIGHLIGHT ENGINE ---
+const highlightText = (text, highlight) => {
+  if (!highlight.trim()) return text;
+  const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+  return (
+    <span>
+      {parts.map((part, i) => 
+        part.toLowerCase() === highlight.toLowerCase() ? (
+          <mark key={i} className="search-highlight">{part}</mark>
+        ) : (
+          part
+        )
+      )}
+    </span>
+  );
 };
 
 // --- COMPONENT: Brand Intelligence ---
@@ -48,7 +65,7 @@ const CompanyLogo = ({ company, size = 30 }) => {
 };
 
 // --- OPTIMIZED JOB CARD ---
-const JobCard = React.memo(({ job, index, setEditingJob }) => {
+const JobCard = React.memo(({ job, index, setEditingJob, searchTerm }) => {
   return (
     <Draggable key={job.id} draggableId={job.id.toString()} index={index}>
       {(provided) => (
@@ -61,7 +78,8 @@ const JobCard = React.memo(({ job, index, setEditingJob }) => {
           <div className="card-header">
             <CompanyLogo company={job.title} />
             <div style={{ flex: 1 }}>
-              <strong>{job.title}</strong>
+              {/* Day 43: Highlighted Title */}
+              <strong>{highlightText(job.title, searchTerm)}</strong>
               <div className="card-tags-mini">
                 {(job.tags || []).slice(0, 2).map(tag => (
                   <span key={tag} className="job-tag">#{tag}</span>
@@ -90,6 +108,7 @@ function App() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
   const [editingJob, setEditingJob] = useState(null);
+  const [selectedTags, setSelectedTags] = useState([]);
 
   // --- DAY 41: REPORT GENERATION ---
   const generateReport = async () => {
@@ -116,6 +135,17 @@ function App() {
   const interviewingCount = jobs.filter(j => j.status === "Interviewing").length;
   const offersCount = jobs.filter(j => j.status === "Offered").length;
   const successRate = totalJobs > 0 ? Math.round(((interviewingCount + offersCount) / totalJobs) * 100) : 0;
+
+  const allUniqueTags = useMemo(() => {
+    const tags = jobs.flatMap(job => job.tags || []);
+    return [...new Set(tags)];
+  }, [jobs]);
+
+  const toggleTag = (tag) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
+  };
 
   const jobsThisWeek = useMemo(() => {
     return jobs.filter(job => {
@@ -147,9 +177,12 @@ function App() {
     return jobs.filter(j => {
       const matchesStatus = filterStatus === "All" || j.status === filterStatus;
       const matchesTitle = j.title.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesStatus && matchesTitle;
+      const matchesTags = selectedTags.length === 0 || 
+        selectedTags.every(tag => (j.tags || []).includes(tag));
+
+      return matchesStatus && matchesTitle && matchesTags;
     });
-  }, [jobs, filterStatus, searchTerm]);
+  }, [jobs, filterStatus, searchTerm, selectedTags]);
 
   const columns = useMemo(() => ({
     Applied: filteredJobs.filter(j => j.status === "Applied"),
@@ -192,7 +225,6 @@ function App() {
       <header className="header-nav">
         <h1>💼 Career Tracker</h1>
         <div className="header-right">
-          {/* Day 41: Capture Button */}
           <button className="pill success-btn" onClick={generateReport}>📸 Capture Report</button>
           <button className="pill" onClick={() => setViewMode(viewMode === "board" ? "list" : "board")}>
             {viewMode === "board" ? "📑 List" : "📋 Board"}
@@ -201,7 +233,6 @@ function App() {
         </div>
       </header>
 
-      {/* Day 41: Wrapped Report Area */}
       <div className="report-area">
         <Stats 
           totalJobs={totalJobs} 
@@ -226,8 +257,39 @@ function App() {
         </div>
       </div>
 
+      {allUniqueTags.length > 0 && (
+        <div className="tag-filter-bar card">
+          <span style={{ fontSize: '12px', opacity: 0.7 }}>Filter by Tags: </span>
+          {allUniqueTags.map(tag => (
+            <button 
+              key={tag} 
+              className={`tag-pill ${selectedTags.includes(tag) ? 'active' : ''}`}
+              onClick={() => toggleTag(tag)}
+            >
+              #{tag}
+            </button>
+          ))}
+          {selectedTags.length > 0 && (
+            <button className="clear-tags" onClick={() => setSelectedTags([])}>Clear</button>
+          )}
+        </div>
+      )}
+
       <div className="card add-job-box">
-        <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Company..." />
+        <input 
+          type="text" 
+          value={input} 
+          onChange={(e) => setInput(e.target.value)} 
+          placeholder="New company..." 
+        />
+        {/* Day 43 Search Input integrated with title filtering */}
+        <input 
+          type="text" 
+          value={searchTerm} 
+          onChange={(e) => setSearchTerm(e.target.value)} 
+          placeholder="Search on board..." 
+          className="search-input"
+        />
         <input type="date" value={inputDate} onChange={(e) => setInputDate(e.target.value)} />
         <button onClick={() => {
            if (!input.trim()) return toast.error("Enter a company!");
@@ -246,7 +308,13 @@ function App() {
                     <h3 className="column-title">{status} <span>{columnJobs.length}</span></h3>
                     <div className="column-content">
                       {columnJobs.map((job, index) => (
-                        <JobCard key={job.id} job={job} index={index} setEditingJob={setEditingJob} />
+                        <JobCard 
+                          key={job.id} 
+                          job={job} 
+                          index={index} 
+                          setEditingJob={setEditingJob} 
+                          searchTerm={searchTerm} 
+                        />
                       ))}
                       {provided.placeholder}
                     </div>
@@ -261,7 +329,8 @@ function App() {
           {filteredJobs.map(job => (
             <div key={job.id} className="job-item card">
               <CompanyLogo company={job.title} />
-              <strong>{job.title}</strong>
+              {/* Day 43 Highlight in List View */}
+              <strong>{highlightText(job.title, searchTerm)}</strong>
               <button onClick={() => setEditingJob(job)}>📝</button>
             </div>
           ))}

@@ -635,3 +635,78 @@ body {
   transform: scale(1.05);
   box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
 }
+
+/* Day 42: Filter Bar Container */
+.tag-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 15px 0;
+  padding: 12px;
+  border: 1px solid rgba(52, 152, 219, 0.2);
+  background: rgba(52, 152, 219, 0.05);
+  border-radius: 12px;
+}
+
+/* Individual Tag Buttons */
+.tag-pill {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid #3498db;
+  background: transparent;
+  color: #3498db;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.tag-pill:hover {
+  background: rgba(52, 152, 219, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Active State when Tag is Selected */
+.tag-pill.active {
+  background: #3498db;
+  color: white;
+  box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+}
+
+.clear-tags {
+  background: none;
+  border: none;
+  color: #e74c3c;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 13px;
+  margin-left: 10px;
+}
+
+.report-area {
+  transition: background 0.3s ease;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 16px;
+}
+
+/* Ensure content stays inside the capture area */
+.dark-mode .report-area {
+  background: #1a1a1a; /* Matches your JS logic */
+}
+
+/* Mini tags inside the cards */
+.card-tags-mini {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.job-tag {
+  font-size: 10px;
+  background: rgba(52, 152, 219, 0.1);
+  color: #3498db;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
