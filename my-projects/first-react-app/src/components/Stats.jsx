@@ -1,23 +1,42 @@
+import React from 'react';
+
+/**
+ * Stats Component
+ * Displays the job search dashboard metrics and weekly goal progress.
+ */
 export default function Stats({ 
-  totalJobs, interviewingCount, offersCount, successRate, 
-  jobsThisWeek, weeklyGoal, setWeeklyGoal, goalProgress, pipelineValue 
+  totalJobs, 
+  interviewingCount, 
+  offersCount, 
+  successRate, 
+  jobsThisWeek, 
+  weeklyGoal, 
+  setWeeklyGoal, 
+  goalProgress, 
+  pipelineValue 
 }) {
   return (
     <div className="stats-section" id="stats-summary">
+      
       {/* 1. Main Stats Cards */}
       <div className="stats-container">
         <div className="stat-card">
           <span>Total Apps</span>
           <strong>{totalJobs}</strong>
         </div>
+        
         <div className="stat-card">
           <span>Interviews</span>
           <strong>{interviewingCount}</strong>
         </div>
+        
         <div className="stat-card highlight">
           <span>Potential Salary</span>
-          <strong className="salary-text">${pipelineValue.toLocaleString()}</strong>
+          <strong className="salary-text">
+            ${pipelineValue ? pipelineValue.toLocaleString() : '0'}
+          </strong>
         </div>
+        
         <div className="stat-card success">
           <span>Offers</span>
           <strong className="offer-highlight">{offersCount}</strong>
@@ -27,7 +46,9 @@ export default function Stats({
       {/* 2. Goal Tracker Section */}
       <div className="goal-tracker card">
         <div className="goal-header">
-          <span>Weekly Goal: <strong>{jobsThisWeek} / {weeklyGoal}</strong></span>
+          <span>
+            Weekly Goal: <strong>{jobsThisWeek} / {weeklyGoal}</strong>
+          </span>
           <input 
             type="number" 
             min="1"
@@ -38,6 +59,7 @@ export default function Stats({
           />
         </div>
         
+        {/* Progress Bar Container */}
         <div className="progress-bar-bg">
           <div 
             className={`progress-bar-fill goal-fill ${goalProgress >= 100 ? 'completed' : ''}`} 
@@ -48,6 +70,7 @@ export default function Stats({
           ></div>
         </div>
         
+        {/* Dynamic Hint Message */}
         <p className="goal-hint">
           {goalProgress >= 100 
             ? "🎉 Weekly goal reached! Keep it up!" 

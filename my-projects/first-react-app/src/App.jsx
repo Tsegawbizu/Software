@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Stats from './components/Stats';
 import confetti from 'canvas-confetti';
 import html2canvas from 'html2canvas';
@@ -10,23 +10,34 @@ import './App.css';
 const CompanyLogo = ({ company, size = 30 }) => {
   const [error, setError] = useState(false);
   // Simple domain guesser for the API
-  const domain = company.toLowerCase().replace(/\s+/g, '') + ".com";
+  const domain = company.toLowerCase().trim().replace(/\s+/g, '') + ".com";
 
-  if (error) {
+  if (error || !company) {
     return (
-      <div className="logo-fallback" style={{ width: size, height: size }}>
-        {company.charAt(0).toUpperCase()}
+      <div className="logo-fallback" style={{ 
+        width: size, 
+        height: size, 
+        backgroundColor: '#3498db', 
+        color: 'white', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        borderRadius: '4px',
+        fontSize: '12px',
+        fontWeight: 'bold'
+      }}>
+        {company ? company.charAt(0).toUpperCase() : '?'}
       </div>
     );
   }
 
   return (
     <img 
-      src={`https://img.logo.dev/${domain}?token=pk_YOUR_FREE_TOKEN`} // 2026 Modern API
+      src={`https://img.logo.dev/${domain}?token=pk_YOUR_FREE_TOKEN`} 
       alt={company}
       className="company-logo-img"
       onError={() => setError(true)}
-      style={{ width: size, height: size }}
+      style={{ width: size, height: size, borderRadius: '4px', marginRight: '10px', objectFit: 'contain' }}
     />
   );
 };
@@ -84,7 +95,8 @@ function App() {
     const end = new Date();
     end.setDate(end.getDate() - (weekOffset * 7));
     const start = new Date();
-    start.setDate(start.setHours(0,0,0,0) - ((weekOffset + 1) * 7));
+    start.setHours(0,0,0,0);
+    start.setDate(start.getDate() - ((weekOffset + 1) * 7));
     const count = jobs.filter(job => {
       const d = new Date(job.date);
       return d > start && d <= end;
@@ -99,7 +111,7 @@ function App() {
       const matchesNotes = (j.notes || "").toLowerCase().includes(noteSearchTerm.toLowerCase());
       return matchesStatus && matchesTitle && matchesNotes;
     })
-    .sort((a, b) => (b.isPriority === a.isPriority ? 0 : b.isPriority ? 1 : -1));
+    .sort((a, b) => (b.isPriority === a.isPriority ? 0 : b.isPriority ? -1 : 1));
 
   const columns = {
     Applied: filteredJobs.filter(j => j.status === "Applied"),
@@ -114,7 +126,7 @@ function App() {
   }, [jobs]);
 
   useEffect(() => {
-    localStorage.setItem("tsegaw-goal", weeklyGoal);
+    localStorage.setItem("tsegaw-goal", weeklyGoal.toString());
   }, [weeklyGoal]);
 
   useEffect(() => {
@@ -132,7 +144,7 @@ function App() {
   // --- 4. ACTIONS & HELPERS ---
   const getDaysSinceUpdate = (lastModified) => {
     if (!lastModified) return 0;
-    const diff = Math.abs(new Date() - new Date(lastModified));
+    const diff = Math.abs(Date.now() - lastModified);
     return Math.floor(diff / (1000 * 60 * 60 * 24));
   };
 
@@ -287,10 +299,14 @@ function App() {
 
       <div className="stats-grid">
         <Stats 
-          totalJobs={totalJobs} interviewingCount={interviewingCount} 
-          offersCount={offersCount} successRate={successRate} 
-          jobsThisWeek={jobsThisWeek} weeklyGoal={weeklyGoal}
-          setWeeklyGoal={setWeeklyGoal} goalProgress={goalProgress}
+          totalJobs={totalJobs} 
+          interviewingCount={interviewingCount} 
+          offersCount={offersCount} 
+          successRate={successRate} 
+          jobsThisWeek={jobsThisWeek} 
+          weeklyGoal={weeklyGoal}
+          setWeeklyGoal={setWeeklyGoal} 
+          goalProgress={goalProgress}
           pipelineValue={pipelineValue}
         />
         
@@ -334,7 +350,7 @@ function App() {
             value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} 
           />
           <input 
-            className="search-bar notes-search" placeholder="📝 Search inside notes..." 
+            className="search-bar notes-search" placeholder="📝 Search notes..." 
             value={noteSearchTerm} onChange={(e) => setNoteSearchTerm(e.target.value)} 
           />
         </div>
@@ -391,7 +407,6 @@ function App() {
                                   >
                                     {job.isPriority ? '⭐' : '☆'}
                                   </button>
-                                  {/* NEW: BRAND LOGO */}
                                   <CompanyLogo company={job.title} />
                                   <strong>{job.title}</strong>
                                 </div>
@@ -401,13 +416,6 @@ function App() {
                                 <small className={getDaysSince(job.date) > 7 ? 'text-warn' : ''}>
                                   {getDaysSince(job.date)}d ago
                                 </small>
-                                
-                                {job.interviewDate && (
-                                  <span className="response-time-badge">
-                                    ⚡ {getResponseTime(job.date, job.interviewDate)}d gap
-                                  </span>
-                                )}
-
                                 {job.salary > 0 && <span className="money-pill">${(job.salary/1000).toFixed(0)}k</span>}
                               </div>
                               <div className="card-actions">
@@ -437,13 +445,9 @@ function App() {
                 >
                     {job.isPriority ? '⭐' : '☆'}
                 </button>
-                {/* NEW: BRAND LOGO */}
                 <CompanyLogo company={job.title} />
                 <strong>{job.title}</strong>
                 <span className={`badge ${job.status.toLowerCase()}`}>{job.status}</span>
-                {getDaysSinceUpdate(job.lastModified) >= 7 && job.status !== "Rejected" && (
-                   <span className="stale-badge" style={{marginLeft: '10px'}}>👻 {getDaysSinceUpdate(job.lastModified)}d</span>
-                )}
               </div>
               <div className="actions">
                 <button onClick={() => setEditingJob(job)}>📝</button>
@@ -463,7 +467,7 @@ function App() {
                 <h3>Edit: {editingJob.title}</h3>
                 <button 
                   className="research-btn"
-                  onClick={() => window.open(`https://www.google.com/search?q=${editingJob.title}+interview+questions+glassdoor`, '_blank')}
+                  onClick={() => window.open(`https://www.google.com/search?q=${editingJob.title}+interview+questions`, '_blank')}
                 >
                   🔍 Research
                 </button>
@@ -542,20 +546,7 @@ function App() {
               </div>
             </div>
 
-            <div className="modal-notes-header">
-              <label>📝 Interview & Role Notes</label>
-              <button 
-                className="reset-template-btn"
-                onClick={() => {
-                  if(window.confirm("Reset notes to template?")) {
-                    const template = `✅ PROS: \n- \n\n❌ CONS: \n- \n\n🏢 CULTURE: \n- `;
-                    updateEditingJobState({...editingJob, notes: template});
-                  }
-                }}
-              >
-                ♻️ Reset Template
-              </button>
-            </div>
+            <label>📝 Notes</label>
             <textarea 
               value={editingJob.notes} 
               className="modal-notes"
@@ -581,10 +572,12 @@ function App() {
         }} className="clear-btn">Clear All</button>
       </footer>
 
+      {/* Hidden container for Export Image */}
       <div style={{ position: 'absolute', left: '-9999px' }}>
-        <div id="stats-summary" style={{ padding: '20px', width: '400px', textAlign: 'center', background: 'white', color: 'black' }}>
+        <div id="stats-summary-export" style={{ padding: '20px', width: '400px', background: 'white', color: 'black' }}>
           <h2>My Career Progress 🚀</h2>
-          <p>Applied: {totalJobs} | Offers: {offersCount}</p>
+          <p>Total Apps: {totalJobs}</p>
+          <p>Offers: {offersCount}</p>
           <p>Success Rate: {successRate}%</p>
         </div>
       </div>
