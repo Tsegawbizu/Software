@@ -623,3 +623,15 @@ body {
   font-weight: bold;
   font-size: 13px;
 }
+
+.success-btn {
+  background: linear-gradient(135deg, #2ecc71, #27ae60) !important;
+  color: white !important;
+  border: none;
+  font-weight: bold;
+}
+
+.success-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+}

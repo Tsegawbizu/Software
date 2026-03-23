@@ -3,9 +3,10 @@ import Stats from './components/Stats';
 import confetti from 'canvas-confetti';
 import { Toaster, toast } from 'react-hot-toast'; 
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import html2canvas from 'html2canvas'; // Day 41: For report generation
 import './App.css';
 
-// --- HELPERS (Days 37 & 39) ---
+// --- HELPERS ---
 const TECH_KEYWORDS = ["React", "Vite", "Tailwind", "JavaScript", "TypeScript", "Node.js", "CSS", "HTML", "Git", "API", "Firebase"];
 
 const findMatches = (text) => {
@@ -46,7 +47,7 @@ const CompanyLogo = ({ company, size = 30 }) => {
   );
 };
 
-// --- DAY 38: OPTIMIZED JOB CARD ---
+// --- OPTIMIZED JOB CARD ---
 const JobCard = React.memo(({ job, index, setEditingJob }) => {
   return (
     <Draggable key={job.id} draggableId={job.id.toString()} index={index}>
@@ -76,22 +77,41 @@ const JobCard = React.memo(({ job, index, setEditingJob }) => {
 });
 
 function App() {
+  // --- STATE ---
   const [jobs, setJobs] = useState(() => {
     const savedJobs = localStorage.getItem("tsegaw-jobs");
     return savedJobs ? JSON.parse(savedJobs) : [];
   });
-
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
   const [weeklyGoal, setWeeklyGoal] = useState(() => parseInt(localStorage.getItem("tsegaw-goal")) || 5);
   const [viewMode, setViewMode] = useState("board"); 
   const [input, setInput] = useState("");
   const [inputDate, setInputDate] = useState(new Date().toISOString().split('T')[0]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [noteSearchTerm, setNoteSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
   const [editingJob, setEditingJob] = useState(null);
 
-  // --- CALCULATED DATA ---
+  // --- DAY 41: REPORT GENERATION ---
+  const generateReport = async () => {
+    const element = document.querySelector(".report-area");
+    if (!element) return;
+    try {
+      const canvas = await html2canvas(element, {
+        backgroundColor: isDarkMode ? "#1a1a1a" : "#ffffff",
+        scale: 2,
+      });
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = `Career-Report-${new Date().toISOString().split('T')[0]}.png`;
+      link.click();
+      toast.success("Success Report Generated! 🚀");
+      confetti();
+    } catch (err) {
+      toast.error("Failed to generate report.");
+    }
+  };
+
+  // --- CALCULATIONS ---
   const totalJobs = jobs.length;
   const interviewingCount = jobs.filter(j => j.status === "Interviewing").length;
   const offersCount = jobs.filter(j => j.status === "Offered").length;
@@ -127,10 +147,9 @@ function App() {
     return jobs.filter(j => {
       const matchesStatus = filterStatus === "All" || j.status === filterStatus;
       const matchesTitle = j.title.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesNotes = (j.notes || "").toLowerCase().includes(noteSearchTerm.toLowerCase());
-      return matchesStatus && matchesTitle && matchesNotes;
+      return matchesStatus && matchesTitle;
     });
-  }, [jobs, filterStatus, searchTerm, noteSearchTerm]);
+  }, [jobs, filterStatus, searchTerm]);
 
   const columns = useMemo(() => ({
     Applied: filteredJobs.filter(j => j.status === "Applied"),
@@ -139,25 +158,23 @@ function App() {
     Rejected: filteredJobs.filter(j => j.status === "Rejected")
   }), [filteredJobs]);
 
-  // --- ACTIONS ---
+  // --- EFFECTS ---
   useEffect(() => localStorage.setItem("tsegaw-jobs", JSON.stringify(jobs)), [jobs]);
   useEffect(() => {
     document.body.classList.toggle('dark-mode', isDarkMode);
     localStorage.setItem("theme", isDarkMode ? "dark" : "light");
   }, [isDarkMode]);
 
-  // DAY 40: Timeline tracking on drag
+  // --- ACTIONS ---
   const onDragEnd = (result) => {
     const { destination, draggableId } = result;
     if (!destination) return;
-
     setJobs(prev => prev.map(job => {
       if (job.id.toString() === draggableId) {
         const newStatus = destination.droppableId;
         const newHistory = job.status !== newStatus 
           ? [...(job.history || []), { status: newStatus, date: new Date().toISOString() }]
           : (job.history || []);
-
         return { ...job, status: newStatus, history: newHistory, lastModified: Date.now() };
       }
       return job;
@@ -175,6 +192,8 @@ function App() {
       <header className="header-nav">
         <h1>💼 Career Tracker</h1>
         <div className="header-right">
+          {/* Day 41: Capture Button */}
+          <button className="pill success-btn" onClick={generateReport}>📸 Capture Report</button>
           <button className="pill" onClick={() => setViewMode(viewMode === "board" ? "list" : "board")}>
             {viewMode === "board" ? "📑 List" : "📋 Board"}
           </button>
@@ -182,17 +201,28 @@ function App() {
         </div>
       </header>
 
-      <Stats totalJobs={totalJobs} interviewingCount={interviewingCount} offersCount={offersCount} successRate={successRate} jobsThisWeek={jobsThisWeek} weeklyGoal={weeklyGoal} goalProgress={goalProgress} />
+      {/* Day 41: Wrapped Report Area */}
+      <div className="report-area">
+        <Stats 
+          totalJobs={totalJobs} 
+          interviewingCount={interviewingCount} 
+          offersCount={offersCount} 
+          successRate={successRate} 
+          jobsThisWeek={jobsThisWeek} 
+          weeklyGoal={weeklyGoal} 
+          goalProgress={goalProgress} 
+        />
 
-      <div className="card velocity-chart">
-        <h3>📈 Weekly Velocity</h3>
-        <div className="chart-container">
-          {activityData.map((day, i) => (
-            <div key={i} className="chart-column">
-              <div className="chart-bar" style={{ height: `${(day.count / maxActivity) * 80}px`, backgroundColor: day.count > 0 ? '#3498db' : '#eee' }}></div>
-              <span className="day-name">{day.date}</span>
-            </div>
-          ))}
+        <div className="card velocity-chart">
+          <h3>📈 Weekly Velocity</h3>
+          <div className="chart-container">
+            {activityData.map((day, i) => (
+              <div key={i} className="chart-column">
+                <div className="chart-bar" style={{ height: `${(day.count / maxActivity) * 80}px`, backgroundColor: day.count > 0 ? '#3498db' : '#eee' }}></div>
+                <span className="day-name">{day.date}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -258,7 +288,6 @@ function App() {
               onChange={(e) => updateEditingJobState({...editingJob, description: e.target.value})}
             />
 
-            {/* DAY 40: JOURNEY TRACKER */}
             <div className="timeline-section">
               <h4>🛤️ Application Journey</h4>
               <div className="vertical-timeline">
