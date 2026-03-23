@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Stats from './components/Stats';
 import confetti from 'canvas-confetti';
-import html2canvas from 'html2canvas';
 import { Toaster, toast } from 'react-hot-toast'; 
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import './App.css';
@@ -13,6 +12,28 @@ const findMatches = (text) => {
   if (!text) return [];
   return TECH_KEYWORDS.filter(skill => text.toLowerCase().includes(skill.toLowerCase()));
 };
+
+// --- DAY 38: OPTIMIZED JOB CARD COMPONENT ---
+const JobCard = React.memo(({ job, index, setEditingJob }) => {
+  return (
+    <Draggable key={job.id} draggableId={job.id.toString()} index={index}>
+      {(provided) => (
+        <div 
+          className="job-card-mini" 
+          ref={provided.innerRef} 
+          {...provided.draggableProps} 
+          {...provided.dragHandleProps}
+        >
+          <div className="card-header">
+            <CompanyLogo company={job.title} />
+            <strong>{job.title}</strong>
+            <button onClick={() => setEditingJob(job)}>📝</button>
+          </div>
+        </div>
+      )}
+    </Draggable>
+  );
+});
 
 // --- COMPONENT: Brand Intelligence ---
 const CompanyLogo = ({ company, size = 30 }) => {
@@ -65,15 +86,16 @@ function App() {
   const interviewingCount = jobs.filter(j => j.status === "Interviewing").length;
   const offersCount = jobs.filter(j => j.status === "Offered").length;
   const successRate = totalJobs > 0 ? Math.round(((interviewingCount + offersCount) / totalJobs) * 100) : 0;
-
   const pipelineValue = jobs.filter(j => j.status !== "Rejected").reduce((sum, job) => sum + (Number(job.salary) || 0), 0);
 
-  const jobsThisWeek = jobs.filter(job => {
-    const jobDate = new Date(job.date);
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    return jobDate >= sevenDaysAgo;
-  }).length;
+  const jobsThisWeek = useMemo(() => {
+    return jobs.filter(job => {
+      const jobDate = new Date(job.date);
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      return jobDate >= sevenDaysAgo;
+    }).length;
+  }, [jobs]);
 
   const goalProgress = Math.min(Math.round((jobsThisWeek / weeklyGoal) * 100), 100);
 
@@ -93,19 +115,21 @@ function App() {
 
   const maxActivity = Math.max(...activityData.map(d => d.count), 1);
 
-  const filteredJobs = jobs.filter(j => {
-    const matchesStatus = filterStatus === "All" || j.status === filterStatus;
-    const matchesTitle = j.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesNotes = (j.notes || "").toLowerCase().includes(noteSearchTerm.toLowerCase());
-    return matchesStatus && matchesTitle && matchesNotes;
-  }).sort((a, b) => (b.isPriority === a.isPriority ? 0 : b.isPriority ? -1 : 1));
+  const filteredJobs = useMemo(() => {
+    return jobs.filter(j => {
+      const matchesStatus = filterStatus === "All" || j.status === filterStatus;
+      const matchesTitle = j.title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesNotes = (j.notes || "").toLowerCase().includes(noteSearchTerm.toLowerCase());
+      return matchesStatus && matchesTitle && matchesNotes;
+    }).sort((a, b) => (b.isPriority === a.isPriority ? 0 : b.isPriority ? -1 : 1));
+  }, [jobs, filterStatus, searchTerm, noteSearchTerm]);
 
-  const columns = {
+  const columns = useMemo(() => ({
     Applied: filteredJobs.filter(j => j.status === "Applied"),
     Interviewing: filteredJobs.filter(j => j.status === "Interviewing"),
     Offered: filteredJobs.filter(j => j.status === "Offered"),
     Rejected: filteredJobs.filter(j => j.status === "Rejected")
-  };
+  }), [filteredJobs]);
 
   // --- 3. EFFECTS ---
   useEffect(() => localStorage.setItem("tsegaw-jobs", JSON.stringify(jobs)), [jobs]);
@@ -115,29 +139,6 @@ function App() {
   }, [isDarkMode]);
 
   // --- 4. ACTIONS ---
-  const exportData = () => {
-    const dataBlob = new Blob([JSON.stringify(jobs, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `backup-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    toast.success("Backup downloaded!");
-  };
-
-  const importData = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const imported = JSON.parse(e.target.result);
-        if (Array.isArray(imported)) { setJobs(imported); toast.success("Imported!"); }
-      } catch (err) { toast.error("Error reading file."); }
-    };
-    reader.readAsText(file);
-  };
-
   const onDragEnd = (result) => {
     const { destination, draggableId } = result;
     if (!destination) return;
@@ -146,18 +147,11 @@ function App() {
     ));
   };
 
-  const addJob = () => {
-    if (!input.trim()) return toast.error("Enter a company!");
-    const newJob = { id: Date.now(), title: input, status: "Applied", date: inputDate, salary: 0, notes: "", description: "", lastModified: Date.now() };
-    setJobs([newJob, ...jobs]);
-    setInput("");
-  };
-
-  const updateEditingJobState = (updated) => {
+  const updateEditingJobState = useCallback((updated) => {
     const finalJob = { ...updated, lastModified: Date.now() };
     setEditingJob(finalJob);
-    setJobs(jobs.map(j => j.id === finalJob.id ? finalJob : j));
-  };
+    setJobs(prevJobs => prevJobs.map(j => j.id === finalJob.id ? finalJob : j));
+  }, []);
 
   return (
     <div className="App">
@@ -165,18 +159,15 @@ function App() {
       <header className="header-nav">
         <h1>💼 Career Tracker</h1>
         <div className="header-right">
-          <button className="pill" onClick={exportData}>📤 Export</button>
-          <label className="pill" style={{ cursor: 'pointer' }}>📥 Import
-            <input type="file" accept=".json" onChange={importData} style={{ display: 'none' }} />
-          </label>
-          <button className="pill" onClick={() => setViewMode(viewMode === "board" ? "list" : "board")}>{viewMode === "board" ? "📑 List" : "📋 Board"}</button>
+          <button className="pill" onClick={() => setViewMode(viewMode === "board" ? "list" : "board")}>
+            {viewMode === "board" ? "📑 List" : "📋 Board"}
+          </button>
           <button className="pill" onClick={() => setIsDarkMode(!isDarkMode)}>{isDarkMode ? '🌙' : '☀️'}</button>
         </div>
       </header>
 
       <Stats totalJobs={totalJobs} interviewingCount={interviewingCount} offersCount={offersCount} successRate={successRate} jobsThisWeek={jobsThisWeek} weeklyGoal={weeklyGoal} goalProgress={goalProgress} />
 
-      {/* DAY 36: VELOCITY CHART */}
       <div className="card velocity-chart">
         <h3>📈 Weekly Velocity</h3>
         <div className="chart-container">
@@ -192,7 +183,11 @@ function App() {
       <div className="card add-job-box">
         <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Company..." />
         <input type="date" value={inputDate} onChange={(e) => setInputDate(e.target.value)} />
-        <button onClick={addJob}>Add Job</button>
+        <button onClick={() => {
+           if (!input.trim()) return toast.error("Enter a company!");
+           setJobs([{ id: Date.now(), title: input, status: "Applied", date: inputDate, salary: 0, notes: "", description: "", lastModified: Date.now() }, ...jobs]);
+           setInput("");
+        }}>Add Job</button>
       </div>
 
       {viewMode === "board" ? (
@@ -205,17 +200,12 @@ function App() {
                     <h3 className="column-title">{status} <span>{columnJobs.length}</span></h3>
                     <div className="column-content">
                       {columnJobs.map((job, index) => (
-                        <Draggable key={job.id} draggableId={job.id.toString()} index={index}>
-                          {(provided) => (
-                            <div className="job-card-mini" ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                              <div className="card-header">
-                                <CompanyLogo company={job.title} />
-                                <strong>{job.title}</strong>
-                                <button onClick={() => setEditingJob(job)}>📝</button>
-                              </div>
-                            </div>
-                          )}
-                        </Draggable>
+                        <JobCard 
+                          key={job.id} 
+                          job={job} 
+                          index={index} 
+                          setEditingJob={setEditingJob} 
+                        />
                       ))}
                       {provided.placeholder}
                     </div>
@@ -241,16 +231,12 @@ function App() {
         <div className="modal-overlay" onClick={() => setEditingJob(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>Edit {editingJob.title}</h3>
-            
             <label>📄 Job Description</label>
             <textarea 
-              placeholder="Paste description..." 
               value={editingJob.description || ""} 
               className="modal-notes"
               onChange={(e) => updateEditingJobState({...editingJob, description: e.target.value})}
             />
-
-            {/* DAY 37: KEYWORD MATCHES */}
             <div className="keyword-matches">
               <h4>🎯 Skill Match:</h4>
               <div className="badge-container">
@@ -259,9 +245,6 @@ function App() {
                 ))}
               </div>
             </div>
-
-            <label>📝 Notes</label>
-            <textarea value={editingJob.notes} className="modal-notes" onChange={(e) => updateEditingJobState({...editingJob, notes: e.target.value})} />
             <button onClick={() => setEditingJob(null)} className="save-btn">Save</button>
           </div>
         </div>
