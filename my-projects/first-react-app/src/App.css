@@ -590,3 +590,36 @@ body {
   gap: 4px;
   margin-top: 5px;
 }
+.vertical-timeline {
+  border-left: 2px solid #3498db;
+  margin-left: 10px;
+  padding-left: 20px;
+  margin-top: 15px;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 15px;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -27px;
+  top: 5px;
+  width: 12px;
+  height: 12px;
+  background: #3498db;
+  border-radius: 50%;
+}
+
+.timeline-date {
+  font-size: 11px;
+  display: block;
+  opacity: 0.7;
+}
+
+.timeline-status {
+  font-weight: bold;
+  font-size: 13px;
+}

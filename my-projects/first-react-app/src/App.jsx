@@ -5,7 +5,7 @@ import { Toaster, toast } from 'react-hot-toast';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import './App.css';
 
-// --- DAY 37 & 39: HELPERS ---
+// --- HELPERS (Days 37 & 39) ---
 const TECH_KEYWORDS = ["React", "Vite", "Tailwind", "JavaScript", "TypeScript", "Node.js", "CSS", "HTML", "Git", "API", "Firebase"];
 
 const findMatches = (text) => {
@@ -13,41 +13,9 @@ const findMatches = (text) => {
   return TECH_KEYWORDS.filter(skill => text.toLowerCase().includes(skill.toLowerCase()));
 };
 
-// Day 39 Tag Parsing
 const parseTags = (input) => {
   return input.split(',').map(tag => tag.trim()).filter(tag => tag !== "");
 };
-
-// --- DAY 38: OPTIMIZED JOB CARD COMPONENT ---
-const JobCard = React.memo(({ job, index, setEditingJob }) => {
-  return (
-    <Draggable key={job.id} draggableId={job.id.toString()} index={index}>
-      {(provided) => (
-        <div 
-          className="job-card-mini" 
-          ref={provided.innerRef} 
-          {...provided.draggableProps} 
-          {...provided.dragHandleProps}
-        >
-          <div className="card-header">
-            <CompanyLogo company={job.title} />
-            <div style={{ flex: 1 }}>
-              <strong>{job.title}</strong>
-              {/* Day 39: Tags on Board */}
-              <div className="card-tags-mini">
-                {(job.tags || []).slice(0, 2).map(tag => (
-                  <span key={tag} className="job-tag">#{tag}</span>
-                ))}
-                {job.tags?.length > 2 && <span style={{fontSize: '9px', opacity: 0.6}}>+{job.tags.length - 2}</span>}
-              </div>
-            </div>
-            <button onClick={() => setEditingJob(job)}>📝</button>
-          </div>
-        </div>
-      )}
-    </Draggable>
-  );
-});
 
 // --- COMPONENT: Brand Intelligence ---
 const CompanyLogo = ({ company, size = 30 }) => {
@@ -78,8 +46,36 @@ const CompanyLogo = ({ company, size = 30 }) => {
   );
 };
 
+// --- DAY 38: OPTIMIZED JOB CARD ---
+const JobCard = React.memo(({ job, index, setEditingJob }) => {
+  return (
+    <Draggable key={job.id} draggableId={job.id.toString()} index={index}>
+      {(provided) => (
+        <div 
+          className="job-card-mini" 
+          ref={provided.innerRef} 
+          {...provided.draggableProps} 
+          {...provided.dragHandleProps}
+        >
+          <div className="card-header">
+            <CompanyLogo company={job.title} />
+            <div style={{ flex: 1 }}>
+              <strong>{job.title}</strong>
+              <div className="card-tags-mini">
+                {(job.tags || []).slice(0, 2).map(tag => (
+                  <span key={tag} className="job-tag">#{tag}</span>
+                ))}
+              </div>
+            </div>
+            <button onClick={() => setEditingJob(job)}>📝</button>
+          </div>
+        </div>
+      )}
+    </Draggable>
+  );
+});
+
 function App() {
-  // --- 1. STATE & STORAGE ---
   const [jobs, setJobs] = useState(() => {
     const savedJobs = localStorage.getItem("tsegaw-jobs");
     return savedJobs ? JSON.parse(savedJobs) : [];
@@ -95,12 +91,11 @@ function App() {
   const [filterStatus, setFilterStatus] = useState("All");
   const [editingJob, setEditingJob] = useState(null);
 
-  // --- 2. CALCULATED DATA ---
+  // --- CALCULATED DATA ---
   const totalJobs = jobs.length;
   const interviewingCount = jobs.filter(j => j.status === "Interviewing").length;
   const offersCount = jobs.filter(j => j.status === "Offered").length;
   const successRate = totalJobs > 0 ? Math.round(((interviewingCount + offersCount) / totalJobs) * 100) : 0;
-  const pipelineValue = jobs.filter(j => j.status !== "Rejected").reduce((sum, job) => sum + (Number(job.salary) || 0), 0);
 
   const jobsThisWeek = useMemo(() => {
     return jobs.filter(job => {
@@ -134,7 +129,7 @@ function App() {
       const matchesTitle = j.title.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesNotes = (j.notes || "").toLowerCase().includes(noteSearchTerm.toLowerCase());
       return matchesStatus && matchesTitle && matchesNotes;
-    }).sort((a, b) => (b.isPriority === a.isPriority ? 0 : b.isPriority ? -1 : 1));
+    });
   }, [jobs, filterStatus, searchTerm, noteSearchTerm]);
 
   const columns = useMemo(() => ({
@@ -144,26 +139,34 @@ function App() {
     Rejected: filteredJobs.filter(j => j.status === "Rejected")
   }), [filteredJobs]);
 
-  // --- 3. EFFECTS ---
+  // --- ACTIONS ---
   useEffect(() => localStorage.setItem("tsegaw-jobs", JSON.stringify(jobs)), [jobs]);
   useEffect(() => {
     document.body.classList.toggle('dark-mode', isDarkMode);
     localStorage.setItem("theme", isDarkMode ? "dark" : "light");
   }, [isDarkMode]);
 
-  // --- 4. ACTIONS ---
+  // DAY 40: Timeline tracking on drag
   const onDragEnd = (result) => {
     const { destination, draggableId } = result;
     if (!destination) return;
-    setJobs(prev => prev.map(job => 
-      job.id.toString() === draggableId ? { ...job, status: destination.droppableId, lastModified: Date.now() } : job
-    ));
+
+    setJobs(prev => prev.map(job => {
+      if (job.id.toString() === draggableId) {
+        const newStatus = destination.droppableId;
+        const newHistory = job.status !== newStatus 
+          ? [...(job.history || []), { status: newStatus, date: new Date().toISOString() }]
+          : (job.history || []);
+
+        return { ...job, status: newStatus, history: newHistory, lastModified: Date.now() };
+      }
+      return job;
+    }));
   };
 
   const updateEditingJobState = useCallback((updated) => {
-    const finalJob = { ...updated, lastModified: Date.now() };
-    setEditingJob(finalJob);
-    setJobs(prevJobs => prevJobs.map(j => j.id === finalJob.id ? finalJob : j));
+    setEditingJob(updated);
+    setJobs(prevJobs => prevJobs.map(j => j.id === updated.id ? updated : j));
   }, []);
 
   return (
@@ -198,17 +201,7 @@ function App() {
         <input type="date" value={inputDate} onChange={(e) => setInputDate(e.target.value)} />
         <button onClick={() => {
            if (!input.trim()) return toast.error("Enter a company!");
-           setJobs([{ 
-             id: Date.now(), 
-             title: input, 
-             status: "Applied", 
-             date: inputDate, 
-             salary: 0, 
-             notes: "", 
-             description: "", 
-             tags: [], // Initialize tags array
-             lastModified: Date.now() 
-           }, ...jobs]);
+           setJobs([{ id: Date.now(), title: input, status: "Applied", date: inputDate, tags: [], history: [], lastModified: Date.now() }, ...jobs]);
            setInput("");
         }}>Add Job</button>
       </div>
@@ -223,12 +216,7 @@ function App() {
                     <h3 className="column-title">{status} <span>{columnJobs.length}</span></h3>
                     <div className="column-content">
                       {columnJobs.map((job, index) => (
-                        <JobCard 
-                          key={job.id} 
-                          job={job} 
-                          index={index} 
-                          setEditingJob={setEditingJob} 
-                        />
+                        <JobCard key={job.id} job={job} index={index} setEditingJob={setEditingJob} />
                       ))}
                       {provided.placeholder}
                     </div>
@@ -255,28 +243,34 @@ function App() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>Edit {editingJob.title}</h3>
             
-            {/* Day 39: Tag Input */}
-            <label style={{marginTop: '15px', display: 'block'}}>🏷️ Tags (comma separated)</label>
+            <label>🏷️ Tags (comma separated)</label>
             <input 
               type="text" 
-              placeholder="e.g. Remote, High Salary, Frontend"
               value={(editingJob.tags || []).join(', ')} 
               className="modal-input"
               onChange={(e) => updateEditingJobState({...editingJob, tags: parseTags(e.target.value)})}
             />
 
-            <label style={{marginTop: '15px', display: 'block'}}>📄 Job Description</label>
+            <label>📄 Job Description</label>
             <textarea 
               value={editingJob.description || ""} 
               className="modal-notes"
               onChange={(e) => updateEditingJobState({...editingJob, description: e.target.value})}
             />
 
-            <div className="keyword-matches">
-              <h4>🎯 Skill Match:</h4>
-              <div className="badge-container">
-                {findMatches(editingJob.description).map(skill => (
-                  <span key={skill} className="skill-badge">{skill}</span>
+            {/* DAY 40: JOURNEY TRACKER */}
+            <div className="timeline-section">
+              <h4>🛤️ Application Journey</h4>
+              <div className="vertical-timeline">
+                <div className="timeline-item">
+                  <span className="timeline-date">{new Date(editingJob.date).toLocaleDateString()}</span>
+                  <span className="timeline-status">Applied</span>
+                </div>
+                {(editingJob.history || []).map((event, i) => (
+                  <div key={i} className="timeline-item">
+                    <span className="timeline-date">{new Date(event.date).toLocaleDateString()}</span>
+                    <span className="timeline-status">{event.status}</span>
+                  </div>
                 ))}
               </div>
             </div>
