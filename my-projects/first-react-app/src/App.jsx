@@ -13,7 +13,18 @@ const parseTags = (input) => {
   return input.split(',').map(tag => tag.trim()).filter(tag => tag !== "");
 };
 
-// --- DAY 43: HIGHLIGHT ENGINE ---
+// Day 47: Countdown Logic
+const getCountdown = (dateString) => {
+  if (!dateString) return null;
+  const now = new Date();
+  const diff = new Date(dateString) - now;
+  if (diff < 0) return { text: "Interview Passed", class: "past" };
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+  if (days > 0) return { text: `${days}d ${hours}h until interview`, class: "upcoming" };
+  return { text: `${hours}h left! ⚡`, class: "imminent" };
+};
+
 const highlightText = (text, highlight) => {
   if (!highlight.trim()) return text;
   const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
@@ -22,19 +33,15 @@ const highlightText = (text, highlight) => {
       {parts.map((part, i) => 
         part.toLowerCase() === highlight.toLowerCase() ? (
           <mark key={i} className="search-highlight">{part}</mark>
-        ) : (
-          part
-        )
+        ) : ( part )
       )}
     </span>
   );
 };
 
-// --- COMPONENT: Brand Intelligence ---
 const CompanyLogo = ({ company, size = 30 }) => {
   const [error, setError] = useState(false);
   const domain = company.toLowerCase().trim().replace(/\s+/g, '') + ".com";
-
   if (error || !company) {
     return (
       <div className="logo-fallback" style={{ 
@@ -47,7 +54,6 @@ const CompanyLogo = ({ company, size = 30 }) => {
       </div>
     );
   }
-
   return (
     <img 
       src={`https://img.logo.dev/${domain}?token=pk_YOUR_FREE_TOKEN`} 
@@ -60,16 +66,12 @@ const CompanyLogo = ({ company, size = 30 }) => {
 };
 
 // --- OPTIMIZED JOB CARD ---
-const JobCard = React.memo(({ job, index, setEditingJob, searchTerm }) => {
+const JobCard = React.memo(({ job, index, setEditingJob, searchTerm, toggleArchive }) => {
+  const countdown = getCountdown(job.interviewDate);
   return (
     <Draggable key={job.id} draggableId={job.id.toString()} index={index}>
       {(provided) => (
-        <div 
-          className="job-card-mini" 
-          ref={provided.innerRef} 
-          {...provided.draggableProps} 
-          {...provided.dragHandleProps}
-        >
+        <div className="job-card-mini" ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
           <div className="card-header">
             <CompanyLogo company={job.title} />
             <div style={{ flex: 1 }}>
@@ -79,8 +81,18 @@ const JobCard = React.memo(({ job, index, setEditingJob, searchTerm }) => {
                   <span key={tag} className="job-tag">#{tag}</span>
                 ))}
               </div>
+              {countdown && (
+                <div className={`interview-badge ${countdown.class}`}>
+                  🗓️ {countdown.text}
+                </div>
+              )}
             </div>
-            <button onClick={() => setEditingJob(job)}>📝</button>
+            <div className="card-actions">
+                <button title="Edit" onClick={() => setEditingJob(job)}>📝</button>
+                <button title={job.isArchived ? "Unarchive" : "Archive"} onClick={() => toggleArchive(job.id)}>
+                    {job.isArchived ? "📤" : "📥"}
+                </button>
+            </div>
           </div>
         </div>
       )}
@@ -89,53 +101,33 @@ const JobCard = React.memo(({ job, index, setEditingJob, searchTerm }) => {
 });
 
 function App() {
-  // --- STATE ---
   const [jobs, setJobs] = useState(() => {
     const savedJobs = localStorage.getItem("tsegaw-jobs");
     return savedJobs ? JSON.parse(savedJobs) : [];
   });
-  
   const [columnOrder, setColumnOrder] = useState(() => {
     const savedCols = localStorage.getItem("tsegaw-columns");
     return savedCols ? JSON.parse(savedCols) : ["Applied", "Interviewing", "Offered", "Rejected"];
   });
-
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
   const [weeklyGoal, setWeeklyGoal] = useState(() => parseInt(localStorage.getItem("tsegaw-goal")) || 5);
   const [viewMode, setViewMode] = useState("board"); 
+  const [showArchived, setShowArchived] = useState(false);
   const [input, setInput] = useState("");
   const [inputDate, setInputDate] = useState(new Date().toISOString().split('T')[0]);
   const [searchTerm, setSearchTerm] = useState("");
   const [editingJob, setEditingJob] = useState(null);
   const [selectedTags, setSelectedTags] = useState([]);
 
-  // --- DAY 45: KEYBOARD SHORTCUTS ---
+  // --- SHORTCUTS ---
   useEffect(() => {
     const handleKeyDown = (e) => {
       const isTyping = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
-
-      if (e.key === 'n' && !isTyping) {
-        e.preventDefault();
-        document.querySelector('.add-job-input')?.focus();
-        toast("Focusing New Job...", { icon: '⌨️' });
-      }
-
-      if (e.key === '/' && !isTyping) {
-        e.preventDefault();
-        document.querySelector('.search-input')?.focus();
-        toast("Focusing Search...", { icon: '🔍' });
-      }
-
-      if (e.key === 'Escape') {
-        setSearchTerm("");
-        setEditingJob(null);
-      }
-
-      if (e.key === 't' && !isTyping) {
-        setIsDarkMode(prev => !prev);
-      }
+      if (e.key === 'n' && !isTyping) { e.preventDefault(); document.querySelector('.add-job-input')?.focus(); }
+      if (e.key === '/' && !isTyping) { e.preventDefault(); document.querySelector('.search-input')?.focus(); }
+      if (e.key === 'Escape') { setSearchTerm(""); setEditingJob(null); }
+      if (e.key === 't' && !isTyping) { setIsDarkMode(prev => !prev); }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
@@ -149,62 +141,35 @@ function App() {
   }, [isDarkMode]);
 
   // --- CALCULATIONS ---
-  const totalJobs = jobs.length;
   const interviewingCount = jobs.filter(j => j.status === "Interviewing").length;
   const offersCount = jobs.filter(j => j.status === "Offered").length;
-  const successRate = totalJobs > 0 ? Math.round(((interviewingCount + offersCount) / totalJobs) * 100) : 0;
-
-  const allUniqueTags = useMemo(() => {
-    const tags = jobs.flatMap(job => job.tags || []);
-    return [...new Set(tags)];
-  }, [jobs]);
-
-  const toggleTag = (tag) => {
-    setSelectedTags(prev => 
-      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
-    );
-  };
-
-  const jobsThisWeek = useMemo(() => {
-    return jobs.filter(job => {
-      const jobDate = new Date(job.date);
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      return jobDate >= sevenDaysAgo;
-    }).length;
-  }, [jobs]);
-
-  const goalProgress = Math.min(Math.round((jobsThisWeek / weeklyGoal) * 100), 100);
-
+  const successRate = jobs.length > 0 ? Math.round(((interviewingCount + offersCount) / jobs.length) * 100) : 0;
+  const allUniqueTags = useMemo(() => [...new Set(jobs.flatMap(job => job.tags || []))], [jobs]);
+  const jobsThisWeek = useMemo(() => jobs.filter(job => new Date(job.date) >= new Date(new Date().setDate(new Date().getDate() - 7))).length, [jobs]);
+  
   const activityData = useMemo(() => {
-    const last7Days = [...Array(7)].map((_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
+    const last7 = [...Array(7)].map((_, i) => {
+      const d = new Date(); d.setDate(d.getDate() - i);
       return d.toISOString().split('T')[0];
     }).reverse();
-
-    return last7Days.map(dateString => ({
-      date: new Date(dateString + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
-      count: jobs.filter(j => j.date === dateString).length
+    return last7.map(ds => ({
+      date: new Date(ds + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
+      count: jobs.filter(j => j.date === ds).length
     }));
   }, [jobs]);
 
   const maxActivity = Math.max(...activityData.map(d => d.count), 1);
 
-  const filteredJobs = useMemo(() => {
-    return jobs.filter(j => {
-      const matchesTitle = j.title.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesTags = selectedTags.length === 0 || 
-        selectedTags.every(tag => (j.tags || []).includes(tag));
-      return matchesTitle && matchesTags;
-    });
-  }, [jobs, searchTerm, selectedTags]);
+  const filteredJobs = useMemo(() => jobs.filter(j => {
+    const matchesTitle = j.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTags = selectedTags.length === 0 || selectedTags.every(tag => (j.tags || []).includes(tag));
+    const matchesArchive = showArchived ? j.isArchived : !j.isArchived;
+    return matchesTitle && matchesTags && matchesArchive;
+  }), [jobs, searchTerm, selectedTags, showArchived]);
 
   const columns = useMemo(() => {
     const cols = {};
-    columnOrder.forEach(status => {
-      cols[status] = filteredJobs.filter(j => j.status === status);
-    });
+    columnOrder.forEach(status => cols[status] = filteredJobs.filter(j => j.status === status));
     return cols;
   }, [filteredJobs, columnOrder]);
 
@@ -212,40 +177,23 @@ function App() {
   const generateReport = async () => {
     const element = document.querySelector(".report-area");
     if (!element) return;
-    try {
-      const canvas = await html2canvas(element, {
-        backgroundColor: isDarkMode ? "#1a1a1a" : "#ffffff",
-        scale: 2,
-      });
-      const link = document.createElement("a");
-      link.href = canvas.toDataURL("image/png");
-      link.download = `Career-Report-${new Date().toISOString().split('T')[0]}.png`;
-      link.click();
-      toast.success("Success Report Generated! 🚀");
-      confetti();
-    } catch (err) {
-      toast.error("Failed to generate report.");
-    }
+    const canvas = await html2canvas(element, { backgroundColor: isDarkMode ? "#1a1a1a" : "#ffffff", scale: 2 });
+    const link = document.createElement("a");
+    link.href = canvas.toDataURL("image/png");
+    link.download = `Career-Report-${new Date().toISOString().split('T')[0]}.png`;
+    link.click();
+    toast.success("Success Report Captured! 📸");
+    confetti();
   };
 
-  const onDragEnd = (result) => {
-    const { destination, draggableId } = result;
-    if (!destination) return;
-    setJobs(prev => prev.map(job => {
-      if (job.id.toString() === draggableId) {
-        const newStatus = destination.droppableId;
-        const newHistory = job.status !== newStatus 
-          ? [...(job.history || []), { status: newStatus, date: new Date().toISOString() }]
-          : (job.history || []);
-        return { ...job, status: newStatus, history: newHistory, lastModified: Date.now() };
-      }
-      return job;
-    }));
+  const toggleArchive = (id) => {
+    setJobs(prev => prev.map(job => job.id === id ? { ...job, isArchived: !job.isArchived } : job));
+    toast.success(showArchived ? "Restored" : "Archived");
   };
 
   const updateEditingJobState = useCallback((updated) => {
     setEditingJob(updated);
-    setJobs(prevJobs => prevJobs.map(j => j.id === updated.id ? updated : j));
+    setJobs(prev => prev.map(j => j.id === updated.id ? updated : j));
   }, []);
 
   return (
@@ -254,6 +202,9 @@ function App() {
       <header className="header-nav">
         <h1>💼 Career Tracker</h1>
         <div className="header-right">
+          <button className={`pill ${showArchived ? 'warning-btn' : ''}`} onClick={() => setShowArchived(!showArchived)}>
+            {showArchived ? "🔙 Board" : "📦 Archive"}
+          </button>
           <button className="pill success-btn" onClick={generateReport}>📸 Capture Report</button>
           <button className="pill" onClick={() => setViewMode(viewMode === "board" ? "list" : "board")}>
             {viewMode === "board" ? "📑 List" : "📋 Board"}
@@ -263,16 +214,7 @@ function App() {
       </header>
 
       <div className="report-area">
-        <Stats 
-          totalJobs={totalJobs} 
-          interviewingCount={interviewingCount} 
-          offersCount={offersCount} 
-          successRate={successRate} 
-          jobsThisWeek={jobsThisWeek} 
-          weeklyGoal={weeklyGoal} 
-          goalProgress={goalProgress} 
-        />
-
+        <Stats totalJobs={jobs.length} interviewingCount={interviewingCount} offersCount={offersCount} successRate={successRate} jobsThisWeek={jobsThisWeek} weeklyGoal={weeklyGoal} goalProgress={Math.min(Math.round((jobsThisWeek / weeklyGoal) * 100), 100)} />
         <div className="card velocity-chart">
           <h3>📈 Weekly Velocity</h3>
           <div className="chart-container">
@@ -288,84 +230,40 @@ function App() {
 
       {allUniqueTags.length > 0 && (
         <div className="tag-filter-bar card">
-          <span style={{ fontSize: '12px', opacity: 0.7 }}>Filter by Tags: </span>
+          <span style={{ fontSize: '12px', opacity: 0.7 }}>Filter: </span>
           {allUniqueTags.map(tag => (
-            <button 
-              key={tag} 
-              className={`tag-pill ${selectedTags.includes(tag) ? 'active' : ''}`}
-              onClick={() => toggleTag(tag)}
-            >
+            <button key={tag} className={`tag-pill ${selectedTags.includes(tag) ? 'active' : ''}`} onClick={() => setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])}>
               #{tag}
             </button>
           ))}
-          {selectedTags.length > 0 && (
-            <button className="clear-tags" onClick={() => setSelectedTags([])}>Clear</button>
-          )}
+          {selectedTags.length > 0 && <button className="clear-tags" onClick={() => setSelectedTags([])}>Clear</button>}
         </div>
       )}
 
       <div className="card column-manager">
-        <input 
-          type="text" 
-          placeholder="+ Add custom board status (e.g. Technical Test)..." 
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && e.target.value.trim()) {
-              if (columnOrder.includes(e.target.value.trim())) return toast.error("Column already exists!");
-              setColumnOrder([...columnOrder, e.target.value.trim()]);
-              e.target.value = "";
-              toast.success("New column added!");
-            }
-          }}
-        />
+        <input type="text" placeholder="+ Add custom status..." onKeyDown={(e) => { if (e.key === 'Enter' && e.target.value.trim()) { setColumnOrder([...columnOrder, e.target.value.trim()]); e.target.value = ""; toast.success("Column added!"); } }} />
       </div>
 
       <div className="card add-job-box">
-        <input 
-          type="text" 
-          className="add-job-input"
-          value={input} 
-          onChange={(e) => setInput(e.target.value)} 
-          placeholder="New company..." 
-        />
-        <input 
-          type="text" 
-          value={searchTerm} 
-          onChange={(e) => setSearchTerm(e.target.value)} 
-          placeholder="Search on board..." 
-          className="search-input"
-        />
+        <input type="text" className="add-job-input" value={input} onChange={(e) => setInput(e.target.value)} placeholder="New company..." />
+        <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search..." className="search-input" />
         <input type="date" value={inputDate} onChange={(e) => setInputDate(e.target.value)} />
-        <button onClick={() => {
-           if (!input.trim()) return toast.error("Enter a company!");
-           setJobs([{ id: Date.now(), title: input, status: columnOrder[0], date: inputDate, tags: [], history: [], lastModified: Date.now() }, ...jobs]);
-           setInput("");
-        }}>Add Job</button>
+        <button onClick={() => { if (!input.trim()) return toast.error("Enter a company!"); setJobs([{ id: Date.now(), title: input, status: columnOrder[0], date: inputDate, tags: [], isArchived: false, lastModified: Date.now() }, ...jobs]); setInput(""); }}>Add Job</button>
       </div>
 
       {viewMode === "board" ? (
-        <DragDropContext onDragEnd={onDragEnd}>
+        <DragDropContext onDragEnd={(result) => { if (!result.destination) return; setJobs(prev => prev.map(job => job.id.toString() === result.draggableId ? { ...job, status: result.destination.droppableId, lastModified: Date.now() } : job)); }}>
           <div className="kanban-board">
             {Object.entries(columns).map(([status, columnJobs]) => (
               <Droppable droppableId={status} key={status}>
                 {(provided) => (
                   <div className="kanban-column" {...provided.droppableProps} ref={provided.innerRef}>
                     <div className="column-header-row">
-                      <h3 className="column-title">{status} <span>{columnJobs.length}</span></h3>
-                      <button className="del-col-btn" onClick={() => {
-                        if (columnJobs.length > 0) return toast.error("Cannot delete non-empty column!");
-                        setColumnOrder(columnOrder.filter(c => c !== status));
-                      }}>×</button>
+                        <h3 className="column-title">{status} <span>{columnJobs.length}</span></h3>
+                        <button className="del-col-btn" onClick={() => { if (columnJobs.length > 0) return toast.error("Column is not empty!"); setColumnOrder(columnOrder.filter(c => c !== status)); }}>×</button>
                     </div>
                     <div className="column-content">
-                      {columnJobs.map((job, index) => (
-                        <JobCard 
-                          key={job.id} 
-                          job={job} 
-                          index={index} 
-                          setEditingJob={setEditingJob} 
-                          searchTerm={searchTerm} 
-                        />
-                      ))}
+                      {columnJobs.map((job, index) => <JobCard key={job.id} job={job} index={index} setEditingJob={setEditingJob} searchTerm={searchTerm} toggleArchive={toggleArchive} />)}
                       {provided.placeholder}
                     </div>
                   </div>
@@ -380,7 +278,10 @@ function App() {
             <div key={job.id} className="job-item card">
               <CompanyLogo company={job.title} />
               <strong>{highlightText(job.title, searchTerm)}</strong>
-              <button onClick={() => setEditingJob(job)}>📝</button>
+              <div className="card-actions">
+                <button onClick={() => setEditingJob(job)}>📝</button>
+                <button onClick={() => toggleArchive(job.id)}>{job.isArchived ? "📤" : "📥"}</button>
+              </div>
             </div>
           ))}
         </div>
@@ -390,30 +291,19 @@ function App() {
         <div className="modal-overlay" onClick={() => setEditingJob(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>Edit {editingJob.title}</h3>
+            <label>📅 Interview Date</label>
+            <input type="datetime-local" value={editingJob.interviewDate || ""} className="modal-input" onChange={(e) => updateEditingJobState({...editingJob, interviewDate: e.target.value})} />
             <label>🏷️ Tags</label>
-            <input 
-              type="text" 
-              value={(editingJob.tags || []).join(', ')} 
-              className="modal-input"
-              onChange={(e) => updateEditingJobState({...editingJob, tags: parseTags(e.target.value)})}
-            />
-            <label>📄 Job Description</label>
-            <textarea 
-              value={editingJob.description || ""} 
-              className="modal-notes"
-              onChange={(e) => updateEditingJobState({...editingJob, description: e.target.value})}
-            />
-            <button onClick={() => setEditingJob(null)} className="save-btn">Save</button>
+            <input type="text" value={(editingJob.tags || []).join(', ')} className="modal-input" onChange={(e) => updateEditingJobState({...editingJob, tags: parseTags(e.target.value)})} />
+            <label>📄 Notes</label>
+            <textarea value={editingJob.description || ""} className="modal-notes" onChange={(e) => updateEditingJobState({...editingJob, description: e.target.value})} />
+            <button onClick={() => setEditingJob(null)} className="save-btn">Save Changes</button>
           </div>
         </div>
       )}
 
-      {/* Day 45: Shortcut Legend */}
       <footer className="shortcut-legend">
-        <span>⌨️ <strong>N</strong>: New Job</span>
-        <span>🔍 <strong>/</strong>: Search</span>
-        <span>🌓 <strong>T</strong>: Toggle Theme</span>
-        <span>❌ <strong>Esc</strong>: Clear/Close</span>
+        <span>⌨️ <strong>N</strong>: New | 🔍 <strong>/</strong>: Search | 🌓 <strong>T</strong>: Theme | ❌ <strong>Esc</strong>: Close</span>
       </footer>
     </div>
   );
