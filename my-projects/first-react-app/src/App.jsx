@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import Stats from './components/Stats';
+import React, { useState, useEffect, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { Toaster, toast } from 'react-hot-toast'; 
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -39,7 +38,34 @@ const calculateStreak = (jobs) => {
   return streak;
 };
 
+const getWeeklyCount = (jobs) => {
+  const now = new Date();
+  const sun = new Date(now);
+  sun.setDate(now.getDate() - now.getDay());
+  sun.setHours(0, 0, 0, 0);
+  return jobs.filter(j => new Date(j.date) >= sun).length;
+};
+
 // --- SUB-COMPONENTS ---
+
+const WeeklyProgress = ({ jobs }) => {
+  const goal = 10; 
+  const count = useMemo(() => getWeeklyCount(jobs), [jobs]);
+  const progress = Math.min((count / goal) * 100, 100);
+
+  return (
+    <div className="card weekly-goal-card">
+      <div className="goal-header">
+        <h3>📅 Weekly Goal</h3>
+        <span className="goal-stat">{count} / {goal}</span>
+      </div>
+      <div className="goal-bar-bg">
+        <div className="goal-bar-fill" style={{ width: `${progress}%` }}></div>
+      </div>
+      <p className="goal-footer">{progress === 100 ? "🎉 Goal Reached!" : `${goal - count} more to go this week`}</p>
+    </div>
+  );
+};
 
 const StreakBadge = ({ jobs }) => {
   const streak = useMemo(() => calculateStreak(jobs), [jobs]);
@@ -73,7 +99,7 @@ const SkillAnalysis = ({ jobs }) => {
         <div key={skill} className="skill-row">
           <div className="skill-info">
             <span className="skill-name">{skill}</span>
-            <span className="skill-ratio">{Math.round((stat.success / stat.total) * 100)}% Win</span>
+            <span className="skill-ratio">{Math.round((stat.success / (stat.total || 1)) * 100)}% Win</span>
           </div>
           <div className="skill-bar-bg"><div className="skill-bar-fill" style={{ width: `${(stat.success / stat.total) * 100}%` }}></div></div>
         </div>
@@ -82,41 +108,7 @@ const SkillAnalysis = ({ jobs }) => {
   );
 };
 
-const SalaryInsights = ({ jobs }) => {
-  const activeJobs = useMemo(() => jobs.filter(j => !j.isArchived && j.maxSalary > 0), [jobs]);
-  const avg = useMemo(() => {
-    if (activeJobs.length === 0) return 0;
-    return Math.round(activeJobs.reduce((acc, j) => acc + Number(j.maxSalary), 0) / activeJobs.length);
-  }, [activeJobs]);
-  return (
-    <div className="card salary-card">
-      <h3>💰 Pipeline Value</h3>
-      <span className="salary-avg">${avg.toLocaleString()}</span>
-      <p className="salary-subtitle">Avg potential salary</p>
-    </div>
-  );
-};
-
-const LocationDensity = ({ jobs }) => {
-  const density = useMemo(() => {
-    const counts = {};
-    jobs.forEach(j => { if(!j.isArchived) counts[j.location] = (counts[j.location] || 0) + 1; });
-    return Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 3);
-  }, [jobs]);
-  return (
-    <div className="card density-card">
-      <h3>📍 Top Locations</h3>
-      {density.map(([loc, count]) => (
-        <div key={loc} className="density-item">
-          <div className="density-label"><span>{loc}</span><span>{count}</span></div>
-          <div className="density-bar-bg"><div className="density-bar-fill" style={{width: `${(count/(jobs.length || 1))*100}%`}}></div></div>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const JobCard = ({ job, index, onNoteUpdate }) => {
+const JobCard = ({ job, index, onNoteUpdate, onRetroUpdate }) => {
   const countdown = getInterviewCountdown(job.date);
   const isUrgent = countdown && !countdown.includes('d') && countdown !== "Started/Passed";
 
@@ -124,7 +116,7 @@ const JobCard = ({ job, index, onNoteUpdate }) => {
     <Draggable draggableId={job.id.toString()} index={index}>
       {(provided) => (
         <div 
-          className={`job-card-mini ${isUrgent ? 'imminent' : ''}`}
+          className={`job-card-mini ${isUrgent ? 'imminent' : ''} ${job.status === 'Rejected' ? 'rejected-mode' : ''}`}
           ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
         >
           <div className="card-header">
@@ -134,6 +126,7 @@ const JobCard = ({ job, index, onNoteUpdate }) => {
             <h4>{job.title}</h4>
           </div>
           <p className="job-loc">📍 {job.location}</p>
+          
           <div className="prep-notes-area">
             <textarea 
               placeholder="Prep notes (LeetCode/Questions)..." 
@@ -141,6 +134,18 @@ const JobCard = ({ job, index, onNoteUpdate }) => {
               onBlur={(e) => onNoteUpdate(job.id, e.target.value)}
             />
           </div>
+
+          {job.status === "Rejected" && (
+            <div className="retro-box">
+              <label>🧠 Retrospective</label>
+              <textarea 
+                placeholder="What did I learn from this rejection?" 
+                defaultValue={job.retro || ""}
+                onBlur={(e) => onRetroUpdate(job.id, e.target.value)}
+              />
+            </div>
+          )}
+
           <div className="card-footer">
             <span className="salary-tag">${Number(job.maxSalary).toLocaleString()}</span>
             <div className="card-tags-mini">
@@ -173,22 +178,19 @@ function App() {
     const newJob = { 
       id: Date.now(), title: input, location: inputLocation || "Remote", 
       maxSalary: inputSalary || 0, status: "Applied", date: inputDate, 
-      tags: [], notes: "", isArchived: false 
+      tags: [], notes: "", retro: "", isArchived: false 
     };
     setJobs([newJob, ...jobs]);
     setInput(""); setInputLocation(""); setInputSalary("");
     toast.success(`Added ${input}`);
   };
 
-  const updateJobNote = (id, notes) => {
-    setJobs(jobs.map(j => j.id === id ? { ...j, notes } : j));
-  };
+  const updateJobNote = (id, notes) => setJobs(jobs.map(j => j.id === id ? { ...j, notes } : j));
+  const updateJobRetro = (id, retro) => setJobs(jobs.map(j => j.id === id ? { ...j, retro } : j));
 
   const onDragEnd = (result) => {
     const { destination, source, draggableId } = result;
     if (!destination) return;
-    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
-
     const updatedJobs = Array.from(jobs);
     const jobIndex = updatedJobs.findIndex(j => j.id.toString() === draggableId);
     updatedJobs[jobIndex].status = destination.droppableId;
@@ -208,8 +210,7 @@ function App() {
       </header>
 
       <div className="insights-grid-layout">
-        <LocationDensity jobs={jobs} />
-        <SalaryInsights jobs={jobs} />
+        <WeeklyProgress jobs={jobs} />
         <SkillAnalysis jobs={jobs} />
       </div>
 
@@ -231,7 +232,13 @@ function App() {
                 <div className="kanban-column" {...provided.droppableProps} ref={provided.innerRef}>
                   <h3>{col}</h3>
                   {jobs.filter(j => j.status === col).map((job, index) => (
-                    <JobCard key={job.id} job={job} index={index} onNoteUpdate={updateJobNote} />
+                    <JobCard 
+                      key={job.id} 
+                      job={job} 
+                      index={index} 
+                      onNoteUpdate={updateJobNote} 
+                      onRetroUpdate={updateJobRetro}
+                    />
                   ))}
                   {provided.placeholder}
                 </div>
