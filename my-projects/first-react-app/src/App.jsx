@@ -13,6 +13,30 @@ const parseTags = (input) => {
   return input.split(',').map(tag => tag.trim()).filter(tag => tag !== "");
 };
 
+// Day 50: Outreach Templates Engine
+const OUTREACH_TEMPLATES = [
+  {
+    id: 'recruiter',
+    label: '🎯 Recruiter Cold Message',
+    text: (company, name) => `Hi ${name || 'there'}, I recently applied for the developer role at ${company}. I've been building React apps for 50 days straight and would love to show how my technical discipline fits your team!`
+  },
+  {
+    id: 'referral',
+    label: '🤝 Asking for Referral',
+    text: (company, name) => `Hi ${name || 'there'}, I see you're working at ${company}. I’m a React developer currently applying there and was wondering if you’d be open to sharing a referral or any advice on the culture?`
+  },
+  {
+    id: 'thanks',
+    label: '🙏 Post-Interview Thanks',
+    text: (company, name) => `Hi ${name || 'there'}, thank you for the interview today at ${company}. I really enjoyed our technical discussion about your React stack. Looking forward to next steps!`
+  },
+  {
+    id: 'followup',
+    label: '⏳ Follow-up (1 Week)',
+    text: (company) => `Hi, just following up on my application for ${company}. I've recently added new features to my Career Tracker project and would love to share my progress!`
+  }
+];
+
 // Day 47: Countdown Logic
 const getCountdown = (dateString) => {
   if (!dateString) return null;
@@ -76,6 +100,11 @@ const JobCard = React.memo(({ job, index, setEditingJob, searchTerm, toggleArchi
             <CompanyLogo company={job.title} />
             <div style={{ flex: 1 }}>
               <strong>{highlightText(job.title, searchTerm)}</strong>
+              {job.referrerName && (
+                <div className="referral-badge" title={`Referred by ${job.referrerName}`}>
+                  🤝 {job.referrerName}
+                </div>
+              )}
               <div className="card-tags-mini">
                 {(job.tags || []).slice(0, 2).map(tag => (
                   <span key={tag} className="job-tag">#{tag}</span>
@@ -186,6 +215,21 @@ function App() {
     confetti();
   };
 
+  const shareSuccessCard = async () => {
+    const element = document.querySelector(".shareable-card");
+    element.style.display = "flex"; 
+    try {
+      const canvas = await html2canvas(element, { backgroundColor: isDarkMode ? "#121212" : "#ffffff", scale: 3 });
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = `My-Career-Progress.png`;
+      link.click();
+      toast.success("LinkedIn Brag Sheet downloaded! 🚀");
+      confetti({ particleCount: 150, spread: 70 });
+    } catch (err) { toast.error("Capture failed."); } 
+    finally { element.style.display = "none"; }
+  };
+
   const toggleArchive = (id) => {
     setJobs(prev => prev.map(job => job.id === id ? { ...job, isArchived: !job.isArchived } : job));
     toast.success(showArchived ? "Restored" : "Archived");
@@ -205,6 +249,7 @@ function App() {
           <button className={`pill ${showArchived ? 'warning-btn' : ''}`} onClick={() => setShowArchived(!showArchived)}>
             {showArchived ? "🔙 Board" : "📦 Archive"}
           </button>
+          <button className="pill brag-btn" onClick={shareSuccessCard}>📢 Share Progress</button>
           <button className="pill success-btn" onClick={generateReport}>📸 Capture Report</button>
           <button className="pill" onClick={() => setViewMode(viewMode === "board" ? "list" : "board")}>
             {viewMode === "board" ? "📑 List" : "📋 Board"}
@@ -291,16 +336,81 @@ function App() {
         <div className="modal-overlay" onClick={() => setEditingJob(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>Edit {editingJob.title}</h3>
+            
+            <div className="modal-row">
+              <div className="input-group">
+                <label>🤝 Referred By</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g., Abebe (Senior Dev)"
+                  value={editingJob.referrerName || ""} 
+                  className="modal-input"
+                  onChange={(e) => updateEditingJobState({...editingJob, referrerName: e.target.value})}
+                />
+              </div>
+              <div className="input-group">
+                <label>📞 Referral Status</label>
+                <select 
+                  value={editingJob.referralStatus || "None"} 
+                  className="modal-input"
+                  onChange={(e) => updateEditingJobState({...editingJob, referralStatus: e.target.value})}
+                >
+                  <option value="None">No Referral</option>
+                  <option value="Pending">Asked / Pending</option>
+                  <option value="Confirmed">Referral Submitted</option>
+                </select>
+              </div>
+            </div>
+
             <label>📅 Interview Date</label>
             <input type="datetime-local" value={editingJob.interviewDate || ""} className="modal-input" onChange={(e) => updateEditingJobState({...editingJob, interviewDate: e.target.value})} />
             <label>🏷️ Tags</label>
             <input type="text" value={(editingJob.tags || []).join(', ')} className="modal-input" onChange={(e) => updateEditingJobState({...editingJob, tags: parseTags(e.target.value)})} />
             <label>📄 Notes</label>
             <textarea value={editingJob.description || ""} className="modal-notes" onChange={(e) => updateEditingJobState({...editingJob, description: e.target.value})} />
-            <button onClick={() => setEditingJob(null)} className="save-btn">Save Changes</button>
+
+            {/* Day 50: Outreach Templates Section */}
+            <div className="outreach-section">
+              <label>📧 Outreach Templates</label>
+              <div className="template-grid">
+                {OUTREACH_TEMPLATES.map(temp => (
+                  <button 
+                    key={temp.id} 
+                    className="template-btn"
+                    onClick={() => {
+                      const message = temp.text(editingJob.title, editingJob.referrerName);
+                      navigator.clipboard.writeText(message);
+                      toast.success(`${temp.label} copied!`);
+                    }}
+                  >
+                    {temp.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button onClick={() => setEditingJob(null)} className="save-btn" style={{ marginTop: '20px' }}>Save Changes</button>
           </div>
         </div>
       )}
+
+      <div className="shareable-card" style={{ display: 'none' }}>
+        <div className="share-header">
+          <h2>🚀 Career Progress</h2>
+          <span>{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+        </div>
+        <div className="share-stats-grid">
+          <div className="share-stat"><h3>{jobs.length}</h3><p>Apps</p></div>
+          <div className="share-stat"><h3>{interviewingCount}</h3><p>Interviews</p></div>
+          <div className="share-stat"><h3>{offersCount}</h3><p>Offers</p></div>
+        </div>
+        <div className="share-footer">
+          <p>Built with my Custom React Tracker</p>
+          <div className="tag-cloud">
+            {allUniqueTags.slice(0, 5).map(t => <span key={t}>#{t}</span>)}
+          </div>
+        </div>
+      </div>
 
       <footer className="shortcut-legend">
         <span>⌨️ <strong>N</strong>: New | 🔍 <strong>/</strong>: Search | 🌓 <strong>T</strong>: Theme | ❌ <strong>Esc</strong>: Close</span>
