@@ -6,29 +6,48 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import html2canvas from 'html2canvas'; 
 import './App.css';
 
-// ... (Keep HELPERS, OUTREACH_TEMPLATES, getCountdown, highlightText, CompanyLogo, JobCard, and LocationDensity)
+// ... (Keep HELPERS, OUTREACH_TEMPLATES, getCountdown, highlightText, CompanyLogo, JobCard, LocationDensity, and SalaryInsights)
 
-// --- DAY 54: FINANCIAL INSIGHTS COMPONENT ---
-const SalaryInsights = ({ jobs }) => {
-  const activeJobs = useMemo(() => 
-    jobs.filter(j => !j.isArchived && j.maxSalary && j.maxSalary > 0), 
-  [jobs]);
-  
-  const avgSalary = useMemo(() => {
-    if (activeJobs.length === 0) return 0;
-    const total = activeJobs.reduce((acc, job) => acc + Number(job.maxSalary), 0);
-    return Math.round(total / activeJobs.length);
-  }, [activeJobs]);
+// --- DAY 55: SKILL GAP ANALYSIS COMPONENT ---
+const SkillAnalysis = ({ jobs }) => {
+  const skillStats = useMemo(() => {
+    const counts = {};
+    jobs.forEach(job => {
+      if (job.isArchived || !job.tags) return;
+      job.tags.forEach(tag => {
+        if (!counts[tag]) counts[tag] = { total: 0, success: 0 };
+        counts[tag].total += 1;
+        // Success = Interviewing or Offered status
+        if (job.status === "Interviewing" || job.status === "Offered") {
+          counts[tag].success += 1;
+        }
+      });
+    });
+    return Object.entries(counts)
+      .sort((a, b) => b[1].total - a[1].total)
+      .slice(0, 5); // Focus on top 5 tech stacks
+  }, [jobs]);
 
   return (
-    <div className="card salary-card">
-      <h3>💰 Pipeline Value</h3>
-      <div className="salary-display">
-        <span className="salary-avg">${avgSalary.toLocaleString()}</span>
-        <p className="salary-subtitle">Average Potential Max</p>
-      </div>
-      <div className="salary-meta">
-        <span>Tracked: {activeJobs.length} jobs</span>
+    <div className="card skill-card">
+      <h3>🚀 Tech Stack Success</h3>
+      <div className="skill-list">
+        {skillStats.length > 0 ? skillStats.map(([skill, stat]) => (
+          <div key={skill} className="skill-row">
+            <div className="skill-info">
+              <span className="skill-name">{skill}</span>
+              <span className="skill-ratio">
+                {Math.round((stat.success / stat.total) * 100)}% Win Rate
+              </span>
+            </div>
+            <div className="skill-bar-bg">
+              <div 
+                className="skill-bar-fill" 
+                style={{ width: `${(stat.success / stat.total) * 100}%` }}
+              ></div>
+            </div>
+          </div>
+        )) : <p className="empty-text">Add tags to analyze your stack!</p>}
       </div>
     </div>
   );
@@ -45,8 +64,6 @@ function App() {
   const [input, setInput] = useState("");
   const [inputLocation, setInputLocation] = useState("");
   const [inputDate, setInputDate] = useState(new Date().toISOString().split('T')[0]);
-  
-  // Day 54: New Salary Input State
   const [inputSalary, setInputSalary] = useState("");
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,17 +72,17 @@ function App() {
   const [isSelectMode, setIsSelectMode] = useState(false);
   const fileInputRef = useRef(null);
 
-  // --- UPDATED ACTIONS ---
+  // --- ACTIONS ---
   const handleAddJob = () => {
     if (!input.trim()) return toast.error("Enter a company!");
     const newJob = { 
         id: Date.now(), 
         title: input, 
         location: inputLocation || "Remote",
-        maxSalary: inputSalary || 0, // Day 54 Field
+        maxSalary: inputSalary || 0,
         status: columnOrder[0], 
         date: inputDate, 
-        tags: [], 
+        tags: [], // Tags added later via Edit
         isArchived: false, 
         lastModified: Date.now() 
     };
@@ -73,7 +90,7 @@ function App() {
     setInput("");
     setInputLocation("");
     setInputSalary("");
-    toast.success(`Logged: ${input} ($${newJob.maxSalary || 'N/A'})`);
+    toast.success(`Logged: ${input}`);
   };
 
   // ... (Keep exportData, importData, clearAllData, and useEffects)
@@ -96,11 +113,11 @@ function App() {
         </div>
       </header>
 
-      {/* Day 54: Updated Triple Layout Grid */}
-      <div className="insights-grid-triple">
-        <Stats totalJobs={jobs.length} jobsThisWeek={0} weeklyGoal={weeklyGoal} />
-        <LocationDensity jobs={jobs} />
-        <SalaryInsights jobs={jobs} />
+      {/* Day 55: Flexible Layout Grid for All Insights */}
+      <div className="insights-grid-layout">
+         <LocationDensity jobs={jobs} />
+         <SalaryInsights jobs={jobs} />
+         <SkillAnalysis jobs={jobs} />
       </div>
 
       <div className="card add-job-box">
