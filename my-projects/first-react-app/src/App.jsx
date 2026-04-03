@@ -6,43 +6,29 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import html2canvas from 'html2canvas'; 
 import './App.css';
 
-// ... (Keep HELPERS, OUTREACH_TEMPLATES, getCountdown, highlightText, CompanyLogo, and JobCard)
+// ... (Keep HELPERS, OUTREACH_TEMPLATES, getCountdown, highlightText, CompanyLogo, JobCard, and LocationDensity)
 
-// --- DAY 53: GEOGRAPHIC DENSITY COMPONENT ---
-const LocationDensity = ({ jobs }) => {
-  const cityCounts = useMemo(() => {
-    return jobs.reduce((acc, job) => {
-      if (job.isArchived) return acc;
-      const city = job.location || "Remote";
-      acc[city] = (acc[city] || 0) + 1;
-      return acc;
-    }, {});
-  }, [jobs]);
-
-  const sortedCities = Object.entries(cityCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
-
-  const totalActive = jobs.filter(j => !j.isArchived).length || 1;
+// --- DAY 54: FINANCIAL INSIGHTS COMPONENT ---
+const SalaryInsights = ({ jobs }) => {
+  const activeJobs = useMemo(() => 
+    jobs.filter(j => !j.isArchived && j.maxSalary && j.maxSalary > 0), 
+  [jobs]);
+  
+  const avgSalary = useMemo(() => {
+    if (activeJobs.length === 0) return 0;
+    const total = activeJobs.reduce((acc, job) => acc + Number(job.maxSalary), 0);
+    return Math.round(total / activeJobs.length);
+  }, [activeJobs]);
 
   return (
-    <div className="card density-map-card">
-      <h3>🌍 Application Density</h3>
-      <div className="density-list">
-        {sortedCities.map(([city, count]) => (
-          <div key={city} className="density-item">
-            <div className="density-label">
-              <span>{city}</span>
-              <span>{Math.round((count / totalActive) * 100)}%</span>
-            </div>
-            <div className="density-bar-bg">
-              <div 
-                className="density-bar-fill" 
-                style={{ width: `${(count / totalActive) * 100}%` }}
-              ></div>
-            </div>
-          </div>
-        ))}
+    <div className="card salary-card">
+      <h3>💰 Pipeline Value</h3>
+      <div className="salary-display">
+        <span className="salary-avg">${avgSalary.toLocaleString()}</span>
+        <p className="salary-subtitle">Average Potential Max</p>
+      </div>
+      <div className="salary-meta">
+        <span>Tracked: {activeJobs.length} jobs</span>
       </div>
     </div>
   );
@@ -53,36 +39,30 @@ function App() {
     const savedJobs = localStorage.getItem("tsegaw-jobs");
     return savedJobs ? JSON.parse(savedJobs) : [];
   });
-  const [columnOrder, setColumnOrder] = useState(() => {
-    const savedCols = localStorage.getItem("tsegaw-columns");
-    return savedCols ? JSON.parse(savedCols) : ["Applied", "Interviewing", "Offered", "Rejected"];
-  });
-  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
-  const [weeklyGoal, setWeeklyGoal] = useState(() => parseInt(localStorage.getItem("tsegaw-goal")) || 5);
   
-  const [viewMode, setViewMode] = useState("board"); 
-  const [showArchived, setShowArchived] = useState(false);
+  // ... (Keep columnOrder, isDarkMode, weeklyGoal, viewMode, showArchived states)
+
   const [input, setInput] = useState("");
+  const [inputLocation, setInputLocation] = useState("");
   const [inputDate, setInputDate] = useState(new Date().toISOString().split('T')[0]);
   
-  // Day 53: Location Input State
-  const [inputLocation, setInputLocation] = useState("");
-  
+  // Day 54: New Salary Input State
+  const [inputSalary, setInputSalary] = useState("");
+
   const [searchTerm, setSearchTerm] = useState("");
   const [editingJob, setEditingJob] = useState(null);
-  const [selectedTags, setSelectedTags] = useState([]);
   const [selectedJobIds, setSelectedJobIds] = useState([]);
   const [isSelectMode, setIsSelectMode] = useState(false);
-
   const fileInputRef = useRef(null);
 
-  // --- ACTIONS ---
+  // --- UPDATED ACTIONS ---
   const handleAddJob = () => {
     if (!input.trim()) return toast.error("Enter a company!");
     const newJob = { 
         id: Date.now(), 
         title: input, 
-        location: inputLocation || "Remote", // Day 53 update
+        location: inputLocation || "Remote",
+        maxSalary: inputSalary || 0, // Day 54 Field
         status: columnOrder[0], 
         date: inputDate, 
         tags: [], 
@@ -92,10 +72,11 @@ function App() {
     setJobs([newJob, ...jobs]);
     setInput("");
     setInputLocation("");
-    toast.success(`Logged: ${input} (${newJob.location})`);
+    setInputSalary("");
+    toast.success(`Logged: ${input} ($${newJob.maxSalary || 'N/A'})`);
   };
 
-  // ... (Keep exportData, importData, clearAllData, and useEffects from Day 52)
+  // ... (Keep exportData, importData, clearAllData, and useEffects)
 
   return (
     <div className="App">
@@ -115,21 +96,24 @@ function App() {
         </div>
       </header>
 
-      {/* Day 53: Layout grid for Stats and Location Insights */}
-      <div className="insights-grid">
+      {/* Day 54: Updated Triple Layout Grid */}
+      <div className="insights-grid-triple">
         <Stats totalJobs={jobs.length} jobsThisWeek={0} weeklyGoal={weeklyGoal} />
         <LocationDensity jobs={jobs} />
+        <SalaryInsights jobs={jobs} />
       </div>
 
       <div className="card add-job-box">
-        <input type="text" className="add-job-input" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Company..." />
-        {/* Day 53: New Location input */}
-        <input type="text" value={inputLocation} onChange={(e) => setInputLocation(e.target.value)} placeholder="Addis, Remote, etc." />
-        <input type="date" value={inputDate} onChange={(e) => setInputDate(e.target.value)} />
-        <button onClick={handleAddJob}>Add Job</button>
+        <div className="input-group-row">
+          <input type="text" className="add-job-input" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Company..." />
+          <input type="text" value={inputLocation} onChange={(e) => setInputLocation(e.target.value)} placeholder="Location..." />
+          <input type="number" value={inputSalary} onChange={(e) => setInputSalary(e.target.value)} placeholder="Max Salary ($)" />
+          <input type="date" value={inputDate} onChange={(e) => setInputDate(e.target.value)} />
+          <button className="add-btn" onClick={handleAddJob}>Add Job</button>
+        </div>
       </div>
 
-      {/* ... (Keep DragDropContext / ViewMode logic) */}
+      {/* ... (Rest of DragDropContext and JobCard mapping) */}
 
       <footer className="shortcut-legend">
         <div className="footer-left">

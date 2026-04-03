@@ -9,6 +9,7 @@
   --text-main: #333333;
   --text-muted: #888888;
   --border-color: #eeeeee;
+  --shadow: 0 4px 6px rgba(0,0,0,0.05);
   --transition: all 0.3s ease;
 }
 
@@ -17,6 +18,7 @@ body.dark-mode {
   --card-bg: #1e1e1e;
   --text-main: #f0f0f0;
   --border-color: #333333;
+  --shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 /* --- 2. BASE STYLES --- */
@@ -30,98 +32,120 @@ body {
 }
 
 .App {
-  max-width: 800px; /* Slightly wider for Kanban/Grids */
+  max-width: 1100px;
   margin: 0 auto;
   padding: 20px;
 }
 
-h1 { text-align: center; margin-bottom: 30px; }
-
-/* --- 3. DASHBOARD, STATS & GRIDS --- */
-.stats-section { margin-bottom: 2rem; }
-
-.stats-grid {
+/* --- 3. INSIGHTS & ANALYTICS (Day 53 & 54) --- */
+.insights-grid-triple {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 20px;
-  margin-bottom: 20px;
-}
-
-.stats-container {
-  display: flex;
+  grid-template-columns: 1fr 1.2fr 1fr;
   gap: 15px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 25px;
 }
 
-.stat-card {
-  flex: 1;
-  background-color: var(--card-bg);
-  padding: 20px;
-  border-radius: 12px;
-  text-align: center;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-  border: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-card.highlight { border-bottom: 4px solid #f39c12; }
-.stat-card span { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
-.stat-card strong { font-size: 1.6rem; color: var(--text-main); }
-
-.offer-highlight { color: var(--success) !important; }
-.salary-text { color: #f39c12; font-size: 1.4rem; }
-
-/* --- 4. CHARTS & PROGRESS --- */
-.chart-container {
-  display: flex;
-  justify-content: space-around;
-  align-items: flex-end;
-  height: 100px;
-  padding-top: 20px;
-}
-
-.chart-bar {
-  width: 25px;
-  background: var(--primary);
-  border-radius: 4px 4px 0 0;
-  position: relative;
-  transition: height 0.3s;
-}
-
-.bar-value {
-  position: absolute;
-  top: -20px;
-  font-size: 0.7rem;
-  width: 100%;
-  text-align: center;
-}
-
-.progress-container, .goal-tracker {
+.card {
   background: var(--card-bg);
-  padding: 1.2rem;
   border-radius: 12px;
+  padding: 20px;
+  box-shadow: var(--shadow);
   border: 1px solid var(--border-color);
-  margin-bottom: 20px;
 }
 
-.progress-bar-bg {
-  background-color: var(--border-color);
-  height: 10px;
-  border-radius: 5px;
+/* Day 53: Density Styles */
+.density-map-card h3, .salary-card h3 {
+  margin: 0 0 15px 0;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.8;
+}
+
+.density-item { margin-bottom: 12px; }
+.density-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.density-bar-bg {
+  height: 6px;
+  background: rgba(128, 128, 128, 0.1);
+  border-radius: 10px;
   overflow: hidden;
 }
-
-.progress-bar-fill {
-  background: linear-gradient(90deg, var(--primary), var(--success));
+.density-bar-fill {
   height: 100%;
-  transition: width 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  background: linear-gradient(90deg, var(--primary), var(--success));
+  transition: width 0.6s ease;
 }
 
-.progress-bar-fill.completed {
-  background: linear-gradient(90deg, #4caf50, #81c784);
-  box-shadow: 0 0 15px rgba(76, 175, 80, 0.6);
-  animation: pulse-glow 2s infinite;
+/* Day 54: Salary Styles */
+.salary-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.salary-avg {
+  display: block;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--success);
+}
+
+.salary-subtitle {
+  font-size: 10px;
+  opacity: 0.6;
+  margin-top: 4px;
+}
+
+.salary-meta {
+  margin-top: 15px;
+  font-size: 10px;
+  opacity: 0.5;
+  border-top: 1px solid var(--border-color);
+  padding-top: 8px;
+  width: 100%;
+}
+
+/* --- 4. INPUTS & ADD BOX --- */
+.add-job-box { margin-bottom: 30px; }
+
+.input-group-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.input-group-row input {
+  flex: 1;
+  min-width: 140px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-main);
+  font-size: 14px;
+}
+
+.add-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 10px 25px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.add-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
 }
 
 /* --- 5. KANBAN BOARD --- */
@@ -129,979 +153,33 @@ h1 { text-align: center; margin-bottom: 30px; }
   display: flex;
   gap: 20px;
   overflow-x: auto;
-  padding: 20px 0;
-  scrollbar-width: thin;
-}
-
-/* Custom Scrollbar for Chrome/Safari */
-.kanban-board::-webkit-scrollbar { height: 6px; }
-.kanban-board::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 10px; }
-
-.kanban-column {
-  flex: 0 0 280px;
-  background: rgba(0,0,0,0.03);
-  border-radius: 12px;
-  padding: 15px;
-  min-height: 500px;
-  transition: background-color 0.3s ease;
-}
-
-.dark-mode .kanban-column { background: rgba(255,255,255,0.05); }
-
-.job-card-mini {
-  background: var(--card-bg);
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  cursor: grab;
-  transition: transform 0.2s, box-shadow 0.2s;
-  border-left: 5px solid var(--primary);
-}
-
-.job-card-mini:active { cursor: grabbing; }
-.job-card-mini:hover { transform: translateY(-3px); }
-
-/* --- 6. JOB ITEMS & BADGES --- */
-.job-item {
-  background: var(--card-bg);
-  padding: 15px;
-  border-radius: 12px;
-  margin-bottom: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border: 1px solid var(--border-color);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.job-item.stale {
-  border-left: 5px solid var(--warning);
-  background-color: rgba(255, 204, 0, 0.05);
-}
-
-.badge {
-  font-size: 10px;
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-weight: bold;
-  text-transform: uppercase;
-}
-
-.badge.applied { background: #e3f2fd; color: #1976d2; }
-.badge.interviewing { background: #fff8e1; color: #fbc02d; }
-.badge.offered { background: #e8f5e9; color: #2e7d32; }
-.badge.rejected { background: #ffebee; color: #c62828; }
-
-.priority-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.2rem;
-  opacity: 0.5;
-  transition: all 0.3s ease;
-}
-
-.priority-btn.active {
-  opacity: 1;
-  color: #f1c40f;
-  text-shadow: 0 0 8px rgba(241, 196, 15, 0.6);
-}
-
-.priority-border {
-  border-left: 6px solid #f1c40f !important;
-  background: linear-gradient(to right, rgba(241, 196, 15, 0.1), transparent);
-}
-
-/* --- 7. INPUTS & CONTROLS --- */
-.controls, .header-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  gap: 15px;
-}
-
-input, select, textarea {
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background: var(--card-bg);
-  color: var(--text-main);
-}
-
-.share-btn {
-  background: linear-gradient(135deg, #0077b5, #00a0dc);
-  color: white;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-/* --- 8. MODALS --- */
-.modal-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 100;
-}
-
-.modal-content {
-  background: var(--card-bg);
-  width: 90%;
-  max-width: 500px;
-  padding: 25px;
-  border-radius: 16px;
-}
-
-.modal-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-top: 15px;
-}
-
-/* --- 9. ANIMATIONS --- */
-@keyframes pulse-glow {
-  0% { opacity: 1; }
-  50% { opacity: 0.7; }
-  100% { opacity: 1; }
-}
-
-@keyframes shake {
-  10%, 90% { transform: translate3d(-1px, 0, 0); }
-  30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
-  40%, 60% { transform: translate3d(3px, 0, 0); }
-}
-
-.interview-alert {
-  border: 2px solid var(--danger) !important;
-  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
-}
-
-/* --- 10. RESPONSIVENESS --- */
-@media (max-width: 768px) {
-  .stats-grid, .modal-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .job-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-}
-
-:root {
-  --bg-color: #f4f7f6;
-  --card-bg: #ffffff;
-  --text-main: #2c3e50;
-  --primary: #3498db;
-  --accent: #e74c3c;
-  --success: #27ae60;
-  --border: #dfe6e9;
-  --shadow: 0 4px 6px rgba(0,0,0,0.05);
-}
-
-.dark-mode {
-  --bg-color: #121212;
-  --card-bg: #1e1e1e;
-  --text-main: #ecf0f1;
-  --border: #333;
-  --shadow: 0 4px 10px rgba(0,0,0,0.3);
-}
-
-body {
-  background-color: var(--bg-color);
-  color: var(--text-main);
-  font-family: 'Inter', -apple-system, sans-serif;
-  transition: all 0.3s ease;
-  margin: 0;
-}
-
-.App {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-/* --- Navigation & Header --- */
-.header-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-}
-
-.pipeline-mini {
-  background: var(--success);
-  color: white;
-  padding: 5px 15px;
-  border-radius: 20px;
-  font-weight: bold;
-}
-
-/* --- Kanban Board --- */
-.kanban-board {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin-top: 20px;
-  align-items: start;
+  padding-bottom: 20px;
 }
 
 .kanban-column {
-  background: rgba(0,0,0,0.02);
+  min-width: 280px;
+  background: rgba(128, 128, 128, 0.05);
   border-radius: 12px;
   padding: 15px;
   min-height: 500px;
 }
 
-.dark-mode .kanban-column {
-  background: rgba(255,255,255,0.03);
-}
-
-.column-title {
-  font-size: 1.1rem;
-  margin-bottom: 15px;
-  display: flex;
-  justify-content: space-between;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-/* --- Job Cards --- */
-.job-card-mini {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 12px;
-  box-shadow: var(--shadow);
-  cursor: grab;
-  position: relative;
-  transition: transform 0.2s;
-}
-
-.job-card-mini:active { cursor: grabbing; }
-
-.priority-border {
-  border-left: 5px solid #f1c40f !important;
-}
-
-.stale-badge {
-  font-size: 0.7rem;
-  background: #ff7675;
-  color: white;
-  padding: 2px 6px;
-  border-radius: 4px;
-  position: absolute;
-  top: -10px;
-  right: 10px;
-}
-
-/* --- Salary Meter (Day 32 Feature) --- */
-.salary-meter-container {
-  margin: 15px 0;
-}
-
-.meter-bar {
-  height: 8px;
-  background: #eee;
-  border-radius: 10px;
-  position: relative;
-  margin-top: 5px;
-}
-
-.dark-mode .meter-bar { background: #333; }
-
-.meter-pointer {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  position: absolute;
-  top: -2px;
-  transition: left 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 0 5px rgba(0,0,0,0.2);
-}
-
-.meter-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.7rem;
-  color: #888;
-}
-
-/* --- Modals --- */
-.modal-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
-}
-
-.modal-content {
-  background: var(--card-bg);
-  padding: 30px;
-  border-radius: 15px;
-  width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 20px;
-}
-
-.modal-input {
-  width: 100%;
-  padding: 10px;
-  margin-top: 5px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg-color);
-  color: var(--text-main);
-}
-
-.modal-notes {
-  width: 100%;
-  height: 150px;
-  margin-top: 10px;
-  padding: 10px;
-  border-radius: 8px;
-  font-family: monospace;
-}
-
-/* --- Checklist --- */
-.task-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 5px;
-}
-
-.task-item.done span {
-  text-decoration: line-through;
-  opacity: 0.5;
-}
-
-/* --- Utilities --- */
-.card {
-  background: var(--card-bg);
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: var(--shadow);
-  border: 1px solid var(--border);
-}
-
+/* --- 6. UTILITIES & RESPONSIVE --- */
 .pill {
   padding: 6px 12px;
   border-radius: 20px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-color);
   background: var(--card-bg);
-  cursor: pointer;
-  margin-right: 5px;
-}
-
-.pill.active {
-  background: var(--primary);
-  color: white;
-}
-
-.velocity-chart {
-  margin: 20px 0;
-  padding: 15px;
-  text-align: center;
-}
-
-.chart-container {
-  display: flex;
-  justify-content: space-around;
-  align-items: flex-end;
-  height: 120px;
-  margin-top: 10px;
-}
-
-.chart-column {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-}
-
-.chart-bar {
-  width: 30px;
-  border-radius: 4px 4px 0 0;
-  transition: height 0.3s ease;
-  position: relative;
-  display: flex;
-  justify-content: center;
-}
-
-.bar-label {
-  position: absolute;
-  top: -20px;
-  font-size: 10px;
-  font-weight: bold;
-}
-
-.day-name {
-  margin-top: 8px;
-  font-size: 12px;
-  opacity: 0.7;
-}
-.chart-bar {
-  transition: height 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.job-tag {
-  background: #f1c40f; /* Yellow/Gold for tags */
-  color: #2c3e50;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: bold;
-  margin-right: 5px;
-  display: inline-block;
-  margin-top: 5px;
-}
-
-.tag-display-area {
-  margin-bottom: 15px;
-}
-
-/* Add tags to the small cards on the board too */
-.card-tags-mini {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 5px;
-}
-.vertical-timeline {
-  border-left: 2px solid #3498db;
-  margin-left: 10px;
-  padding-left: 20px;
-  margin-top: 15px;
-}
-
-.timeline-item {
-  position: relative;
-  margin-bottom: 15px;
-}
-
-.timeline-item::before {
-  content: '';
-  position: absolute;
-  left: -27px;
-  top: 5px;
-  width: 12px;
-  height: 12px;
-  background: #3498db;
-  border-radius: 50%;
-}
-
-.timeline-date {
-  font-size: 11px;
-  display: block;
-  opacity: 0.7;
-}
-
-.timeline-status {
-  font-weight: bold;
-  font-size: 13px;
-}
-
-.success-btn {
-  background: linear-gradient(135deg, #2ecc71, #27ae60) !important;
-  color: white !important;
-  border: none;
-  font-weight: bold;
-}
-
-.success-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
-}
-
-/* Day 42: Filter Bar Container */
-.tag-filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  margin: 15px 0;
-  padding: 12px;
-  border: 1px solid rgba(52, 152, 219, 0.2);
-  background: rgba(52, 152, 219, 0.05);
-  border-radius: 12px;
-}
-
-/* Individual Tag Buttons */
-.tag-pill {
-  padding: 6px 14px;
-  border-radius: 20px;
-  border: 1px solid #3498db;
-  background: transparent;
-  color: #3498db;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.tag-pill:hover {
-  background: rgba(52, 152, 219, 0.1);
-  transform: translateY(-1px);
-}
-
-/* Active State when Tag is Selected */
-.tag-pill.active {
-  background: #3498db;
-  color: white;
-  box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
-}
-
-.clear-tags {
-  background: none;
-  border: none;
-  color: #e74c3c;
-  text-decoration: underline;
-  cursor: pointer;
-  font-size: 13px;
-  margin-left: 10px;
-}
-
-.report-area {
-  transition: background 0.3s ease;
-  padding: 15px;
-  margin-bottom: 20px;
-  border-radius: 16px;
-}
-
-/* Ensure content stays inside the capture area */
-.dark-mode .report-area {
-  background: #1a1a1a; /* Matches your JS logic */
-}
-
-/* Mini tags inside the cards */
-.card-tags-mini {
-  display: flex;
-  gap: 4px;
-  margin-top: 4px;
-}
-
-.job-tag {
-  font-size: 10px;
-  background: rgba(52, 152, 219, 0.1);
-  color: #3498db;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-/* Day 44: Flexible Kanban Layout */
-.kanban-board {
-  display: flex;
-  gap: 20px;
-  overflow-x: auto; /* Allows horizontal scrolling for many columns */
-  padding-bottom: 20px;
-  align-items: flex-start;
-}
-
-.kanban-column {
-  min-width: 280px; /* Ensures columns don't squash */
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 12px;
-  padding: 10px;
-}
-
-.column-manager {
-  margin-bottom: 15px;
-  border: 1px dashed #3498db;
-}
-
-.column-manager input {
-  width: 100%;
-  padding: 8px;
-  background: transparent;
-  border: 1px solid rgba(52, 152, 219, 0.3);
-  color: inherit;
-  border-radius: 4px;
-}
-
-/* Day 45: Keyboard Shortcut Legend */
-.shortcut-legend {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.05);
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  padding: 5px;
-  font-size: 11px;
-  opacity: 0.6;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(5px);
-  pointer-events: none; /* Don't block clicks */
-}
-
-.dark-mode .shortcut-legend {
-  background: rgba(255, 255, 255, 0.05);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Visual feedback for focused inputs */
-input:focus {
-  outline: 2px solid #3498db;
-  outline-offset: 2px;
-}
-
-/* Day 47: Interview Badges */
-.interview-badge {
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 10px;
-  display: inline-block;
-  margin-top: 5px;
-  font-weight: bold;
-}
-
-.interview-badge.upcoming {
-  background: #e1f5fe;
-  color: #0288d1;
-}
-
-.interview-badge.imminent {
-  background: #fff3e0;
-  color: #ef6c00;
-  animation: pulse 2s infinite;
-}
-
-.interview-badge.past {
-  background: #f5f5f5;
-  color: #9e9e9e;
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.6; }
-  100% { opacity: 1; }
-}
-
-/* Day 48: Social Share Styles */
-.shareable-card {
-  width: 600px;
-  padding: 40px;
-  flex-direction: column;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 20px;
-  position: absolute;
-  left: -9999px; /* Keep off-screen */
-}
-
-.share-header h2 { margin: 0; font-size: 32px; }
-.share-stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin: 40px 0; }
-.share-stat { text-align: center; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; }
-.share-stat h3 { font-size: 38px; margin: 0; }
-.share-footer { border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; text-align: center; }
-.tag-cloud span { margin: 0 5px; font-size: 12px; opacity: 0.8; }
-
-.brag-btn { background: #6c5ce7; color: white; }
-
-.shareable-card {
-  width: 600px;
-  padding: 40px;
-  flex-direction: column;
-  background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
-  color: white;
-  border-radius: 20px;
-  position: absolute;
-  left: -9999px;
-  font-family: sans-serif;
-}
-
-.share-header h2 { margin: 0; font-size: 32px; }
-.share-stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin: 40px 0; }
-.share-stat { text-align: center; background: rgba(255,255,255,0.2); padding: 20px; border-radius: 15px; }
-.share-stat h3 { font-size: 42px; margin: 0; color: white; }
-.share-stat p { margin: 5px 0 0; opacity: 0.9; font-weight: bold; }
-.share-footer { border-top: 1px solid rgba(255,255,255,0.3); padding-top: 20px; text-align: center; }
-.tag-cloud span { margin: 0 5px; font-size: 14px; opacity: 0.8; }
-
-/* Day 49: Referral Styles */
-.modal-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  margin-bottom: 15px;
-}
-
-.input-group label {
-  display: block;
-  font-size: 12px;
-  font-weight: bold;
-  margin-bottom: 5px;
-  opacity: 0.8;
-}
-
-.referral-badge {
-  font-size: 11px;
-  background: #fff9db;
-  color: #f08c00;
-  padding: 2px 8px;
-  border-radius: 4px;
-  border: 1px solid #ffe066;
-  display: inline-block;
-  margin-top: 4px;
-  font-weight: 600;
-}
-
-/* Dark mode adjustment */
-.dark-mode .referral-badge {
-  background: #332b00;
-  color: #ffd43b;
-  border-color: #5c4d00;
-}
-
-/* Day 49: Referral Tracker Styles */
-.modal-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  margin-bottom: 15px;
-}
-
-.input-group label {
-  display: block;
-  font-size: 12px;
-  font-weight: bold;
-  margin-bottom: 5px;
-  opacity: 0.8;
-}
-
-.referral-badge {
-  font-size: 10px;
-  background: #fff9db;
-  color: #f08c00;
-  padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid #ffe066;
-  display: inline-block;
-  margin-top: 4px;
-  font-weight: 600;
-}
-
-.dark-mode .referral-badge {
-  background: #332b00;
-  color: #ffd43b;
-  border-color: #5c4d00;
-}
-
-/* Day 50: Outreach Engine Styles */
-.outreach-section {
-  margin-top: 20px;
-  padding-top: 15px;
-  border-top: 1px dashed #ccc;
-}
-
-.template-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.template-btn {
-  background: #f1f3f5;
-  border: 1px solid #dee2e6;
-  padding: 8px;
-  font-size: 11px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-  color: #495057;
-}
-
-.template-btn:hover {
-  background: #e9ecef;
-  border-color: #adb5bd;
-}
-
-.dark-mode .template-btn {
-  background: #2d2d2d;
-  border-color: #444;
-  color: #e0e0e0;
-}
-
-.bulk-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #fff9db; /* Light warning yellow */
-  border: 1px solid #fab005;
-  margin-bottom: 15px;
-  animation: slideDown 0.3s ease;
-}
-
-.dark-mode .bulk-toolbar {
-  background: #332b00;
-  border-color: #fcc419;
-  color: #fff;
-}
-
-.selected-card {
-  border: 2px solid #3498db !important;
-  background-color: rgba(52, 152, 219, 0.05);
-}
-
-.card-checkbox {
-  margin-right: 10px;
-  transform: scale(1.2);
-  cursor: pointer;
-}
-
-@keyframes slideDown {
-  from { transform: translateY(-10px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.data-controls {
-  display: flex;
-  gap: 5px;
-  margin-right: 10px;
-  padding-right: 10px;
-  border-right: 1px solid rgba(128, 128, 128, 0.3);
-}
-
-.small-btn {
-  font-size: 11px !important;
-  padding: 4px 8px !important;
-  opacity: 0.8;
-}
-
-.small-btn:hover {
-  opacity: 1;
-}
-
-.danger-text-btn {
-  background: none;
-  border: none;
-  color: #e74c3c;
   font-size: 12px;
   cursor: pointer;
-  text-decoration: underline;
-  opacity: 0.6;
 }
 
-.danger-text-btn:hover {
-  opacity: 1;
-}
-
-.insights-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 20px;
-  margin-bottom: 20px;
-}
-
-.density-map-card h3 {
-  margin-top: 0;
-  font-size: 16px;
-  color: var(--text-color);
-}
-
-.density-item {
-  margin-bottom: 12px;
-}
-
-.density-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  margin-bottom: 4px;
-  font-weight: 500;
-}
-
-.density-bar-bg {
-  height: 8px;
-  background: rgba(0,0,0,0.1);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.dark-mode .density-bar-bg {
-  background: rgba(255,255,255,0.1);
-}
-
-.density-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #3498db, #2ecc71);
-  transition: width 0.5s ease-in-out;
-}
-
-@media (max-width: 768px) {
-  .insights-grid {
+@media (max-width: 1100px) {
+  .insights-grid-triple {
     grid-template-columns: 1fr;
   }
-}
-
-.insights-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 20px;
-  margin-bottom: 20px;
-}
-
-.density-map-card h3 {
-  margin: 0 0 15px 0;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.density-item {
-  margin-bottom: 15px;
-}
-
-.density-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  margin-bottom: 5px;
-}
-
-.density-bar-bg {
-  height: 6px;
-  background: rgba(0,0,0,0.1);
-  border-radius: 3px;
-}
-
-.dark-mode .density-bar-bg {
-  background: rgba(255,255,255,0.1);
-}
-
-.density-bar-fill {
-  height: 100%;
-  background: #3498db;
-  border-radius: 3px;
-  transition: width 0.4s ease;
-}
-
-@media (max-width: 800px) {
-  .insights-grid { grid-template-columns: 1fr; }
+  
+  .input-group-row input {
+    flex: 1 1 100%;
+  }
 }
